@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
@@ -14,7 +13,7 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  
+
   // Footer Data
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contactEmail, setContactEmail] = useState("sakibulhasansami863@gmail.com");
@@ -116,7 +115,8 @@ const Layout: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col min-h-[100dvh] relative overflow-x-hidden text-sm md:text-base transition-colors duration-500"
+      // Ekhane w-full ebong max-w-[100vw] add kora hoyeche screen lock korar jonno
+      className="flex flex-col min-h-[100dvh] relative w-full max-w-[100vw] overflow-x-hidden text-sm md:text-base transition-colors duration-500"
       onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
     >
       {/* Navigation */}
@@ -139,15 +139,15 @@ const Layout: React.FC = () => {
         </nav>
       </div>
 
-      {/* Main Content - Reduced padding to prevent gap below footer */}
-      <main className="flex-grow pt-32 pb-12 px-4 max-w-5xl mx-auto w-full overflow-visible">
-        <div key={location.pathname} className={`page-transition-wrapper ${animClass}`}>
+      {/* Main Content - Ekhane overflow-visible er bodole overflow-x-hidden deya hoyeche */}
+      <main className="flex-grow pt-32 pb-12 px-4 max-w-5xl mx-auto w-full overflow-x-hidden">
+        <div key={location.pathname} className={`page-transition-wrapper ${animClass} w-full`}>
           <Outlet />
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className={`mt-auto py-8 ${themeConfig.styles.cardBg} border-t ${themeConfig.styles.border} relative z-20`}>
+      {/* Footer (No changes here) */}
+      <footer className={`mt-auto py-8 ${themeConfig.styles.cardBg} border-t ${themeConfig.styles.border} relative z-20 w-full`}>
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className={`text-xl font-bold tracking-widest uppercase mb-3 ${themeConfig.styles.textMain}`}>
             RGSI | S-71 STUDIO
@@ -184,7 +184,7 @@ const Layout: React.FC = () => {
           </div>
 
           <div className={`pt-4 border-t ${themeConfig.styles.border} flex flex-col md:flex-row justify-center items-center gap-4 opacity-60 text-[10px] ${themeConfig.styles.textMain}`}>
-            
+
             {/* Language Switcher Button */}
             <div className="relative">
               <button 
@@ -238,4 +238,3 @@ const Layout: React.FC = () => {
 };
 
 export default Layout;
-    
