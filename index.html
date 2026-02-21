@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sakibul Hasan Sami | Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts for Themes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&family=Press+Start+2P&family=Playfair+Display:wght@400;700&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
+              serif: ['Playfair Display', 'serif'],
+              pixel: ['"Press Start 2P"', 'cursive'],
+              tech: ['"Share Tech Mono"', 'monospace'],
+              terminal: ['VT323', 'monospace'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'spin-slow': 'spin 8s linear infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      html { height: 100%; }
+      body { min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+      
+      :root {
+        --hero-glow: #06b6d4;
+        --hero-glow-2: #ec4899;
+      }
+      
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(100,100,100,0.5); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(100,100,100,0.8); }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* --- PAGE TRANSITIONS --- */
+      .page-transition-wrapper {
+        width: 100%;
+        height: 100%;
+        animation-duration: 0.5s;
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+        animation-fill-mode: forwards;
+      }
+      .slide-in-right { animation-name: slideInRight; }
+      .slide-in-left { animation-name: slideInLeft; }
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-50px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      .reveal {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+        transition: all 0.8s cubic-bezier(0.17, 0.55, 0.55, 1);
+      }
+      .reveal.active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      /* --- LIQUID OS (iOS 26 Concept) --- */
+      .liquid-bg {
+        background: linear-gradient(-45deg, #e0e7ff, #f0fdf4, #fdf4ff, #eef2ff);
+        background-size: 400% 400%;
+        animation: liquidGradient 15s ease infinite;
+        position: relative;
+      }
+      .liquid-bg::before {
+        content: '';
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(236,72,153,0.05) 50%, transparent 70%);
+        animation: liquidOrb 20s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+      
+      /* --- BD THEME (Bangladesh Liquid Glass) --- */
+      .bd-liquid-bg {
+        background: linear-gradient(-45deg, #006a4e, #004d38, #006a4e, #0f3d2e); /* Shades of BD Green */
+        background-size: 400% 400%;
+        animation: liquidGradient 15s ease infinite;
+        position: relative;
+      }
+      .bd-liquid-bg::before {
+        content: '';
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        /* The Red Sun glowing and moving */
+        background: radial-gradient(circle, rgba(244, 42, 65, 0.4) 0%, rgba(244, 42, 65, 0.1) 40%, transparent 70%);
+        animation: liquidOrb 25s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes liquidGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      @keyframes liquidOrb {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* --- CYBER OS (Optimized) --- */
+      .cyber-mode {
+        background-color: #050505 !important;
+        background-image: 
+          linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+          linear-gradient(90deg, rgba(0, 255, 65, 0.03), rgba(0, 255, 65, 0.01), rgba(0, 255, 65, 0.03));
+        background-size: 100% 3px, 3px 100%;
+        color: #00FF41 !important;
+        font-family: 'Fira Code', monospace !important;
+      }
+      .cyber-clip {
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      }
+      .cyber-btn-clip {
+        clip-path: polygon(0 0, 90% 0, 100% 100%, 10% 100%);
+      }
+      .bg-matrix { background-color: #000; background-image: linear-gradient(0deg, transparent 24%, rgba(0, 255, 0, .3) 25%, rgba(0, 255, 0, .3) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, .3) 75%, rgba(0, 255, 0, .3) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 0, .3) 25%, rgba(0, 255, 0, .3) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, .3) 75%, rgba(0, 255, 0, .3) 76%, transparent 77%, transparent); background-size: 30px 30px; }
+
+      /* --- HERO ANIMATIONS --- */
+      [class*="anim-"] { position: relative; z-index: 10; }
+
+      /* 1. Static */
+      .anim-static {}
+
+      /* 2. Neon Pulse */
+      .anim-neon-pulse { 
+        box-shadow: 0 0 15px var(--hero-glow); 
+        animation: neonPulse 2s infinite alternate; 
+      }
+      @keyframes neonPulse { from { box-shadow: 0 0 10px var(--hero-glow); } to { box-shadow: 0 0 30px var(--hero-glow-2); } }
+
+      /* 3. RGB Ring */
+      .anim-rgb-ring { border-radius: 50%; }
+      .anim-rgb-ring::before { 
+        content: ''; position: absolute; inset: -5px; z-index: -1; 
+        border-radius: 50%; 
+        background: conic-gradient(var(--hero-glow), var(--hero-glow-2), #fff, var(--hero-glow)); 
+        animation: spinBorder 2s linear infinite; 
+      }
+      @keyframes spinBorder { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+      /* 4. Hologram */
+      .anim-hologram { 
+        box-shadow: 0 0 15px var(--hero-glow) inset;
+        background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--hero-glow) 3px, transparent 3px); 
+        background-size: 100% 4px; 
+        animation: hologramScan 3s linear infinite; 
+      }
+      @keyframes hologramScan { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
+
+      /* 5. Morph (Blob) */
+      .anim-morph {
+        animation: morphing 10s ease-in-out infinite;
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      }
+      .anim-morph img { border-radius: inherit !important; }
+      @keyframes morphing {
+        0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+        50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+        100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      }
+
+      /* 6. Orbital */
+      .anim-orbital::before {
+        content: ''; position: absolute; inset: -15px; border-radius: 50%;
+        border: 2px solid transparent;
+        border-top-color: var(--hero-glow);
+        border-right-color: var(--hero-glow-2);
+        animation: spinBorder 3s linear infinite;
+        pointer-events: none;
+      }
+      .anim-orbital::after {
+        content: ''; position: absolute; inset: -25px; border-radius: 50%;
+        border: 2px solid transparent;
+        border-bottom-color: var(--hero-glow);
+        border-left-color: var(--hero-glow-2);
+        opacity: 0.5;
+        animation: spinBorder 7s linear reverse infinite;
+        pointer-events: none;
+      }
+
+      /* 7. Scanner */
+      .anim-scanner { overflow: hidden !important; border-radius: 50%; }
+      .anim-scanner::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 20px;
+        background: linear-gradient(90deg, transparent, var(--hero-glow), transparent);
+        box-shadow: 0 0 20px var(--hero-glow);
+        animation: scanning 2.5s ease-in-out infinite;
+        opacity: 0.8;
+        z-index: 20;
+      }
+      @keyframes scanning {
+        0% { top: -10%; }
+        100% { top: 110%; }
+      }
+
+      /* 8. Aurora */
+      .anim-aurora {
+        background: linear-gradient(-45deg, var(--hero-glow), var(--hero-glow-2), #23a6d5, #23d5ab);
+        background-size: 300% 300%;
+        animation: liquidGradient 5s ease infinite;
+        border: none !important; 
+        padding: 4px;
+      }
+
+      /* 9. Cyber Spin */
+      .anim-cyber-spin {
+        border: 4px dashed var(--hero-glow) !important;
+        animation: spinBorder 10s linear infinite;
+      }
+      .anim-cyber-spin::before {
+        content: ''; position: absolute; inset: -12px; border-radius: 50%;
+        border: 2px dashed var(--hero-glow-2);
+        animation: spinBorder 5s linear reverse infinite;
+        opacity: 0.7;
+      }
+
+      /* 10. Border Flow (New) */
+      .anim-border-flow {
+        position: relative;
+        overflow: visible !important;
+      }
+      .anim-border-flow::before {
+        content: ''; position: absolute; inset: -4px; z-index: -1;
+        background: conic-gradient(from 0deg, transparent 0deg, var(--hero-glow) 90deg, transparent 180deg);
+        border-radius: 50%;
+        animation: spinBorder 2s linear infinite;
+      }
+      .anim-border-flow::after {
+        content: ''; position: absolute; inset: -4px; z-index: -1;
+        background: conic-gradient(from 180deg, transparent 0deg, var(--hero-glow-2) 90deg, transparent 180deg);
+        border-radius: 50%;
+        animation: spinBorder 2s linear reverse infinite;
+      }
+
+      /* 11. Glitch (New) */
+      .anim-glitch { animation: glitch-anim 3s infinite; }
+      @keyframes glitch-anim {
+        0% { transform: translate(0); filter: brightness(1); }
+        92% { transform: translate(0); filter: brightness(1); }
+        94% { transform: translate(-2px, 2px); filter: brightness(1.5) hue-rotate(90deg); }
+        96% { transform: translate(2px, -2px); filter: brightness(1.5) hue-rotate(-90deg); }
+        98% { transform: translate(0); filter: brightness(1); }
+        100% { transform: translate(0); filter: brightness(1); }
+      }
+
+      /* 12. Ramadan Special */
+      .anim-ramadan {
+        box-shadow: 0 0 20px #FFD700, 0 0 40px rgba(255, 215, 0, 0.4);
+        border: 2px solid #FFD700 !important;
+        animation: moonlight 4s ease-in-out infinite alternate;
+      }
+      @keyframes moonlight {
+        from { box-shadow: 0 0 15px #FFD700; transform: scale(1); }
+        to { box-shadow: 0 0 35px #FFFACD; transform: scale(1.02); }
+      }
+      .anim-ramadan::after {
+        content: '☪';
+        position: absolute;
+        top: -20px;
+        right: -10px;
+        font-size: 2rem;
+        color: #FFD700;
+        animation: floatMoon 3s ease-in-out infinite;
+        text-shadow: 0 0 10px #FFD700;
+        z-index: 20;
+      }
+      @keyframes floatMoon {
+        0%, 100% { transform: translateY(0) rotate(15deg); }
+        50% { transform: translateY(-5px) rotate(0deg); }
+      }
+
+      /* 13. Bijoy (Victory) Special */
+      .anim-bijoy {
+        border: 4px solid #006a4e !important; /* BD Green */
+        box-shadow: 0 0 0 4px #f42a41; /* BD Red */
+        animation: victoryPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes victoryPulse {
+        0%, 100% { box-shadow: 0 0 0 4px #f42a41, 0 0 10px #006a4e; }
+        50% { box-shadow: 0 0 0 6px #f42a41, 0 0 20px #f42a41; }
+      }
+
+      /* --- GOOGLE TRANSLATE CUSTOM STYLES --- */
+      .goog-te-banner-frame { display: none !important; }
+      .goog-te-combo { display: none !important; }
+      body { top: 0px !important; }
+      #google_translate_element { display: none; }
+      * { word-break: break-word; }
+    </style>
+    <!-- Google Translate Script -->
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en', 
+          includedLanguages: 'bn,en,ar', 
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "firebase/": "https://esm.sh/firebase@^12.9.0/",
+        "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "lucide-react": "https://esm.sh/lucide-react@^0.564.0"
+      }
+    }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <div id="google_translate_element"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
