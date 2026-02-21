@@ -42,9 +42,11 @@ const Admin: React.FC = () => {
     'anim-canvas-matrix', 'anim-canvas-dna', 'anim-canvas-network', 'anim-canvas-ramadan', 'anim-canvas-bijoy'
   ];
 
+  // 🔴 EIKHANE NOTUN THEME DUTO ADD KORA HOYECHE 🔴
   const themeOptions: Theme[] = [
     'Liquid OS', 'BD Theme', 'Cyber OS', 'Sakura OS', 'AMOLED OS', 'Retro OS', 
-    'Minimal OS', 'Toxic OS', 'Nordic OS', 'Sunset OS', 'Deep Sea OS', 'Matrix OS', 'Glass OS'
+    'Minimal OS', 'Toxic OS', 'Nordic OS', 'Sunset OS', 'Deep Sea OS', 'Matrix OS', 'Glass OS',
+    'Cotton Candy OS', 'Matcha OS' 
   ];
 
   useEffect(() => {
@@ -72,7 +74,7 @@ const Admin: React.FC = () => {
       setMessage('Verifying...');
       // Firebase function calls your database
       await signInWithEmailAndPassword(auth, email, password);
-      
+
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_auth', 'true');
       setMessage('');
@@ -182,8 +184,6 @@ const Admin: React.FC = () => {
   }
 
   return (
-    // ... [The rest of your JSX code from <div className="py-10 max-w-6xl mx-auto px-4"> onwards remains EXACTLY the same]
-    // (Ami rest of the UI code rakhlam na karon tate kono change nei, tumi tomar purono UI tai niche rakhte paro)
     <div className="py-10 max-w-6xl mx-auto px-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -304,7 +304,7 @@ const Admin: React.FC = () => {
         </section>
       )}
 
-      {/* WRITINGS TAB */}
+               {/* WRITINGS TAB */}
       {activeTab === 'library' && (
         <section className={`max-w-xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <h2 className="text-xl font-bold mb-4">Add New Writing</h2>
