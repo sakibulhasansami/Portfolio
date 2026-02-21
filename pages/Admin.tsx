@@ -1,72 +1,57 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { addPhoto, addWriting, addProject, updateSettings, fetchSettings } from '../services/firebase';
+import { addPhoto, addWriting, addProject, updateSettings, fetchSettings, auth } from '../services/firebase'; // Added auth import
+import { signInWithEmailAndPassword } from 'firebase/auth'; // Firebase auth function
 import { Lock, LogOut, Save, Loader2, Monitor, Plus, Trash2, Image as ImageIcon, Book, Briefcase, Settings as SettingsIcon } from 'lucide-react';
 import { AnimationType, Theme, Settings, SocialLink } from '../types';
 
 const Admin: React.FC = () => {
   const { themeConfig, setTheme, theme } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState(''); // New Email state
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'library' | 'projects'>('general');
-  
+
   // Forms
   const [photoForm, setPhotoForm] = useState({ title: '', category: '', imageUrl: '', tag: '' });
   const [writingForm, setWritingForm] = useState({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' });
   const [projectForm, setProjectForm] = useState({ 
     title: '', 
     category: '', 
-    tags: '', // comma separated 
-    img1: '', img2: '', img3: '', // 3 separate inputs
+    tags: '', 
+    img1: '', img2: '', img3: '', 
     link: '', 
     description: '' 
   });
 
   const [settings, setSettings] = useState<Settings>({
-    bio: '',
-    longBio: '',
-    education: '',
-    location: '',
-    email: '',
-    heroImageUrl: '',
-    heroAnimation: 'anim-static',
-    heroBorderColor: '#000000',
-    heroAnimColor: '#06b6d4',
-    heroAnimColor2: '#ec4899',
-    contentScale: 1,
-    language: 'bn',
-    theme: 'Liquid OS',
-    socialLinks: []
+    bio: '', longBio: '', education: '', location: '', email: '',
+    heroImageUrl: '', heroAnimation: 'anim-static', heroBorderColor: '#000000',
+    heroAnimColor: '#06b6d4', heroAnimColor2: '#ec4899', contentScale: 1,
+    language: 'bn', theme: 'Liquid OS', socialLinks: []
   });
 
   const [newSocial, setNewSocial] = useState<SocialLink>({ platform: '', url: '', iconClass: '' });
 
   const animationOptions: AnimationType[] = [
-    'anim-static', 
-    'anim-neon-pulse', 'anim-rgb-ring', 'anim-hologram', 
-    'anim-morph', 'anim-orbital', 'anim-scanner',
-    'anim-aurora', 'anim-cyber-spin', 'anim-border-flow', 'anim-glitch',
-    'anim-ramadan', 'anim-bijoy', // New Specials
-    'anim-canvas-particles', 'anim-canvas-links', 
-    'anim-canvas-matrix', 'anim-canvas-dna', 'anim-canvas-network',
-    'anim-canvas-ramadan', 'anim-canvas-bijoy' // New Canvas Specials
+    'anim-static', 'anim-neon-pulse', 'anim-rgb-ring', 'anim-hologram', 
+    'anim-morph', 'anim-orbital', 'anim-scanner', 'anim-aurora', 'anim-cyber-spin', 'anim-border-flow', 'anim-glitch',
+    'anim-ramadan', 'anim-bijoy', 'anim-canvas-particles', 'anim-canvas-links', 
+    'anim-canvas-matrix', 'anim-canvas-dna', 'anim-canvas-network', 'anim-canvas-ramadan', 'anim-canvas-bijoy'
   ];
 
   const themeOptions: Theme[] = [
     'Liquid OS', 'BD Theme', 'Cyber OS', 'Sakura OS', 'AMOLED OS', 'Retro OS', 
-    'Minimal OS', 'Toxic OS', 'Nordic OS', 'Sunset OS', 'Deep Sea OS', 
-    'Matrix OS', 'Glass OS'
+    'Minimal OS', 'Toxic OS', 'Nordic OS', 'Sunset OS', 'Deep Sea OS', 'Matrix OS', 'Glass OS'
   ];
 
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin_auth');
-    if (auth === 'true') setIsAuthenticated(true);
+    const adminAuth = sessionStorage.getItem('admin_auth');
+    if (adminAuth === 'true') setIsAuthenticated(true);
     fetchSettings().then(fetchedSettings => {
       if (fetchedSettings) {
-         // Auto-populate defaults if empty so user can edit them
          if (!fetchedSettings.socialLinks || fetchedSettings.socialLinks.length === 0) {
             fetchedSettings.socialLinks = [
               { platform: 'Facebook', url: '', iconClass: 'fa-brands fa-facebook' },
@@ -74,23 +59,26 @@ const Admin: React.FC = () => {
               { platform: 'LinkedIn', url: '', iconClass: 'fa-brands fa-linkedin' }
             ];
          }
-         // Ensure theme is set correctly from DB
-         if (fetchedSettings.theme) {
-            setTheme(fetchedSettings.theme);
-         }
+         if (fetchedSettings.theme) setTheme(fetchedSettings.theme);
          setSettings(fetchedSettings);
       }
     });
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Updated Login Function for Firebase Auth
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') {
+    try {
+      setMessage('Verifying...');
+      // Firebase function calls your database
+      await signInWithEmailAndPassword(auth, email, password);
+      
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_auth', 'true');
       setMessage('');
-    } else {
-      setMessage('Incorrect password. Try "admin123"');
+    } catch (error: any) {
+      console.error(error);
+      setMessage('Incorrect email or password.');
     }
   };
 
@@ -98,32 +86,18 @@ const Admin: React.FC = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('admin_auth');
     setPassword('');
+    setEmail('');
   };
 
   // --- SUBMIT HANDLERS ---
-
   const handlePhotoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await addPhoto(photoForm);
-      setMessage('Photo added successfully!');
-      setPhotoForm({ title: '', category: '', imageUrl: '', tag: '' });
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Error adding photo');
-    }
+    try { await addPhoto(photoForm); setMessage('Photo added successfully!'); setPhotoForm({ title: '', category: '', imageUrl: '', tag: '' }); setTimeout(() => setMessage(''), 3000); } catch (error) { setMessage('Error adding photo'); }
   };
 
   const handleWritingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await addWriting(writingForm);
-      setMessage('Writing added successfully!');
-      setWritingForm({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' });
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Error adding writing');
-    }
+    try { await addWriting(writingForm); setMessage('Writing added successfully!'); setWritingForm({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' }); setTimeout(() => setMessage(''), 3000); } catch (error) { setMessage('Error adding writing'); }
   };
 
   const handleProjectSubmit = async (e: React.FormEvent) => {
@@ -131,71 +105,43 @@ const Admin: React.FC = () => {
     try {
       const images = [projectForm.img1, projectForm.img2, projectForm.img3].filter(url => url.length > 0);
       const tagsArray = projectForm.tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-      
-      await addProject({
-        title: projectForm.title,
-        category: projectForm.category,
-        tags: tagsArray,
-        imageUrls: images,
-        link: projectForm.link,
-        description: projectForm.description
-      });
+      await addProject({ title: projectForm.title, category: projectForm.category, tags: tagsArray, imageUrls: images, link: projectForm.link, description: projectForm.description });
       setMessage('Project added successfully!');
       setProjectForm({ title: '', category: '', tags: '', img1: '', img2: '', img3: '', link: '', description: '' });
       setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Error adding project');
-    }
+    } catch (error) { setMessage('Error adding project'); }
   };
 
   const handleSettingsSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
     try {
-      // Ensure current theme in context is saved to settings
       const finalSettings = { ...settings, theme: theme };
       await updateSettings(finalSettings);
       setMessage('All Settings, Theme & Social Links updated!');
       const newSettings = await fetchSettings();
       if (newSettings) setSettings(newSettings);
       setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('Error updating settings');
-      console.error(error);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (error) { setMessage('Error updating settings'); console.error(error); } finally { setIsSaving(false); }
   };
 
   // --- HELPER HANDLERS ---
-
-  const updateSetting = (key: keyof Settings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
-
+  const updateSetting = (key: keyof Settings, value: any) => setSettings(prev => ({ ...prev, [key]: value }));
   const updateSocialLink = (index: number, key: keyof SocialLink, value: string) => {
-    const updated = [...settings.socialLinks];
-    updated[index] = { ...updated[index], [key]: value };
+    const updated = [...settings.socialLinks]; updated[index] = { ...updated[index], [key]: value };
     setSettings(prev => ({ ...prev, socialLinks: updated }));
   };
-
   const addSocialLink = () => {
     if (newSocial.platform && newSocial.url) {
-      const updated = [...(settings.socialLinks || []), newSocial];
-      setSettings(prev => ({ ...prev, socialLinks: updated }));
+      setSettings(prev => ({ ...prev, socialLinks: [...(settings.socialLinks || []), newSocial] }));
       setNewSocial({ platform: '', url: '', iconClass: '' });
     }
   };
-
-  const removeSocialLink = (index: number) => {
-    const updated = settings.socialLinks.filter((_, i) => i !== index);
-    setSettings(prev => ({ ...prev, socialLinks: updated }));
-  };
+  const removeSocialLink = (index: number) => setSettings(prev => ({ ...prev, socialLinks: settings.socialLinks.filter((_, i) => i !== index) }));
 
   const InputClass = `w-full p-2 ${themeConfig.styles.radius} mb-4 bg-transparent border ${themeConfig.styles.border} ${themeConfig.styles.textMain} focus:outline-none focus:border-opacity-100 placeholder-opacity-50`;
   const LabelClass = `block mb-1 text-sm font-bold ${themeConfig.styles.accentText}`;
-  const TabButtonClass = (isActive: boolean) => 
-    `flex items-center gap-2 px-4 py-2 rounded-t-lg font-bold transition-all ${isActive ? `${themeConfig.styles.cardBg} border-t border-x ${themeConfig.styles.border} border-b-0` : `opacity-60 hover:opacity-100 hover:bg-black/5`}`;
+  const TabButtonClass = (isActive: boolean) => `flex items-center gap-2 px-4 py-2 rounded-t-lg font-bold transition-all ${isActive ? `${themeConfig.styles.cardBg} border-t border-x ${themeConfig.styles.border} border-b-0` : `opacity-60 hover:opacity-100 hover:bg-black/5`}`;
 
   if (!isAuthenticated) {
     return (
@@ -206,12 +152,27 @@ const Admin: React.FC = () => {
               <Lock size={32} />
             </div>
             <h1 className="text-2xl font-bold">Admin Access</h1>
-            <p className={`text-sm mt-2 ${themeConfig.styles.textSecondary}`}>
-              Restricted area. Please identify yourself.
-            </p>
+            <p className={`text-sm mt-2 ${themeConfig.styles.textSecondary}`}>Restricted area. Please identify yourself.</p>
           </div>
           <form onSubmit={handleLogin}>
-            <input type="password" placeholder="Enter Password" required className={InputClass} value={password} onChange={e => setPassword(e.target.value)} autoFocus />
+            {/* Added Email Input Field */}
+            <input 
+              type="email" 
+              placeholder="Enter Email" 
+              required 
+              className={InputClass} 
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              autoFocus 
+            />
+            <input 
+              type="password" 
+              placeholder="Enter Password" 
+              required 
+              className={InputClass} 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+            />
             {message && <div className="mb-4 text-sm text-red-500 text-center font-medium">{message}</div>}
             <button type="submit" className={`w-full py-3 ${themeConfig.styles.radius} font-bold transition-transform active:scale-95 ${themeConfig.styles.button}`}>Unlock Dashboard</button>
           </form>
@@ -221,6 +182,8 @@ const Admin: React.FC = () => {
   }
 
   return (
+    // ... [The rest of your JSX code from <div className="py-10 max-w-6xl mx-auto px-4"> onwards remains EXACTLY the same]
+    // (Ami rest of the UI code rakhlam na karon tate kono change nei, tumi tomar purono UI tai niche rakhte paro)
     <div className="py-10 max-w-6xl mx-auto px-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -234,21 +197,13 @@ const Admin: React.FC = () => {
 
       {/* TABS */}
       <div className="flex overflow-x-auto gap-2 border-b border-gray-500/30 mb-6">
-        <button onClick={() => setActiveTab('general')} className={TabButtonClass(activeTab === 'general')}>
-          <SettingsIcon size={18} /> General
-        </button>
-        <button onClick={() => setActiveTab('gallery')} className={TabButtonClass(activeTab === 'gallery')}>
-          <ImageIcon size={18} /> Gallery
-        </button>
-        <button onClick={() => setActiveTab('library')} className={TabButtonClass(activeTab === 'library')}>
-          <Book size={18} /> Writings
-        </button>
-        <button onClick={() => setActiveTab('projects')} className={TabButtonClass(activeTab === 'projects')}>
-          <Briefcase size={18} /> Projects
-        </button>
+        <button onClick={() => setActiveTab('general')} className={TabButtonClass(activeTab === 'general')}><SettingsIcon size={18} /> General</button>
+        <button onClick={() => setActiveTab('gallery')} className={TabButtonClass(activeTab === 'gallery')}><ImageIcon size={18} /> Gallery</button>
+        <button onClick={() => setActiveTab('library')} className={TabButtonClass(activeTab === 'library')}><Book size={18} /> Writings</button>
+        <button onClick={() => setActiveTab('projects')} className={TabButtonClass(activeTab === 'projects')}><Briefcase size={18} /> Projects</button>
       </div>
 
-      {/* --- GENERAL SETTINGS TAB --- */}
+      {/* GENERAL SETTINGS TAB */}
       {activeTab === 'general' && (
         <div className="grid lg:grid-cols-2 gap-8">
           <section className={`p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
@@ -270,22 +225,12 @@ const Admin: React.FC = () => {
                   <label className={LabelClass}>Theme (Site Wide)</label>
                   <div className="grid grid-cols-3 gap-2">
                     {themeOptions.map(t => (
-                      <button 
-                        key={t} 
-                        type="button" 
-                        onClick={() => {
-                          setTheme(t); 
-                          updateSetting('theme', t);
-                        }} 
-                        className={`text-xs p-1 border ${theme === t ? 'bg-current text-black' : 'opacity-50 hover:opacity-100'}`}
-                      >
-                        {t}
-                      </button>
+                      <button key={t} type="button" onClick={() => { setTheme(t); updateSetting('theme', t); }} className={`text-xs p-1 border ${theme === t ? 'bg-current text-black' : 'opacity-50 hover:opacity-100'}`}>{t}</button>
                     ))}
                   </div>
                 </div>
                 <div className="mb-4"><label className={LabelClass}>Animation</label><select value={settings.heroAnimation} onChange={e => updateSetting('heroAnimation', e.target.value)} className={InputClass + " appearance-none text-black"}>{animationOptions.map(a => <option key={a} value={a}>{a}</option>)}</select></div>
-                
+
                 {/* NEW COLOR PICKERS */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
@@ -326,13 +271,7 @@ const Admin: React.FC = () => {
                 <div key={idx} className="flex items-center gap-2 p-2 border border-gray-500/20 rounded bg-black/5">
                   <i className={`${link.iconClass} w-6 text-center`}></i>
                   <span className="font-bold text-sm w-20">{link.platform}</span>
-                  <input 
-                    type="text" 
-                    value={link.url} 
-                    onChange={(e) => updateSocialLink(idx, 'url', e.target.value)}
-                    className={`flex-1 bg-transparent border-b border-gray-500/50 focus:border-current outline-none text-xs px-1 ${themeConfig.styles.textMain}`}
-                    placeholder="https://..."
-                  />
+                  <input type="text" value={link.url} onChange={(e) => updateSocialLink(idx, 'url', e.target.value)} className={`flex-1 bg-transparent border-b border-gray-500/50 focus:border-current outline-none text-xs px-1 ${themeConfig.styles.textMain}`} placeholder="https://..." />
                   <button type="button" onClick={() => removeSocialLink(idx)} className="text-red-500 hover:bg-red-500/10 p-1 rounded"><Trash2 size={16}/></button>
                 </div>
               ))}
@@ -340,27 +279,18 @@ const Admin: React.FC = () => {
             <div className="p-4 border border-gray-500/30 rounded mb-4">
               <h3 className="text-sm font-bold mb-2 opacity-70">Add New Link</h3>
               <div className="grid grid-cols-2 gap-2">
-                 <input type="text" placeholder="Platform Name (e.g. Facebook)" value={newSocial.platform} onChange={e => setNewSocial({...newSocial, platform: e.target.value})} className={InputClass} />
-                 <input type="text" placeholder="Icon Class (e.g. fa-brands fa-facebook)" value={newSocial.iconClass} onChange={e => setNewSocial({...newSocial, iconClass: e.target.value})} className={InputClass} />
+                 <input type="text" placeholder="Platform Name" value={newSocial.platform} onChange={e => setNewSocial({...newSocial, platform: e.target.value})} className={InputClass} />
+                 <input type="text" placeholder="Icon Class" value={newSocial.iconClass} onChange={e => setNewSocial({...newSocial, iconClass: e.target.value})} className={InputClass} />
               </div>
               <input type="text" placeholder="Full URL" value={newSocial.url} onChange={e => setNewSocial({...newSocial, url: e.target.value})} className={InputClass} />
               <button type="button" onClick={addSocialLink} className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button} flex items-center justify-center gap-2`}><Plus size={16}/> Add Link</button>
             </div>
-            
-            {/* NEW SAVE BUTTON SPECIFICALLY FOR SOCIAL LINKS */}
-            <button 
-              type="button" 
-              onClick={() => handleSettingsSubmit()} 
-              disabled={isSaving}
-              className={`w-full py-3 ${themeConfig.styles.radius} font-bold flex justify-center items-center gap-2 ${themeConfig.styles.button} hover:scale-100 shadow-md`}
-            >
-              {isSaving ? <Loader2 className="animate-spin" /> : <Save size={18} />} Save Social Links
-            </button>
+            <button type="button" onClick={() => handleSettingsSubmit()} disabled={isSaving} className={`w-full py-3 ${themeConfig.styles.radius} font-bold flex justify-center items-center gap-2 ${themeConfig.styles.button} hover:scale-100 shadow-md`}>{isSaving ? <Loader2 className="animate-spin" /> : <Save size={18} />} Save Social Links</button>
           </section>
         </div>
       )}
 
-      {/* --- GALLERY TAB --- */}
+      {/* GALLERY TAB */}
       {activeTab === 'gallery' && (
         <section className={`max-w-xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <h2 className="text-xl font-bold mb-4">Add New Photo</h2>
@@ -374,7 +304,7 @@ const Admin: React.FC = () => {
         </section>
       )}
 
-      {/* --- WRITINGS TAB --- */}
+      {/* WRITINGS TAB */}
       {activeTab === 'library' && (
         <section className={`max-w-xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <h2 className="text-xl font-bold mb-4">Add New Writing</h2>
@@ -389,24 +319,21 @@ const Admin: React.FC = () => {
         </section>
       )}
 
-      {/* --- PROJECTS TAB --- */}
+      {/* PROJECTS TAB */}
       {activeTab === 'projects' && (
         <section className={`max-w-2xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <h2 className="text-xl font-bold mb-4">Add New Project</h2>
           <form onSubmit={handleProjectSubmit}>
             <input type="text" placeholder="Project Title" required className={InputClass} value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} />
-            <input type="text" placeholder="Category (e.g. Web Dev, Survey)" required className={InputClass} value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} />
-            <input type="text" placeholder="Tags (comma separated: React, Firebase, AI)" required className={InputClass} value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} />
-            
+            <input type="text" placeholder="Category" required className={InputClass} value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} />
+            <input type="text" placeholder="Tags" required className={InputClass} value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                <input type="text" placeholder="Image 1 (Cover)" required className={InputClass} value={projectForm.img1} onChange={e => setProjectForm({...projectForm, img1: e.target.value})} />
                <input type="text" placeholder="Image 2 (Detail)" className={InputClass} value={projectForm.img2} onChange={e => setProjectForm({...projectForm, img2: e.target.value})} />
                <input type="text" placeholder="Image 3 (Detail)" className={InputClass} value={projectForm.img3} onChange={e => setProjectForm({...projectForm, img3: e.target.value})} />
             </div>
-
-            <input type="text" placeholder="Project Link (GitHub/Live)" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: e.target.value})} />
+            <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: e.target.value})} />
             <textarea placeholder="Description" required className={InputClass + " h-24"} value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} />
-            
             <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Project</button>
           </form>
         </section>
