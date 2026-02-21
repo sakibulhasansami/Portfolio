@@ -1,5 +1,5 @@
-
 import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth'; // <-- ১. Authentication Import kora holo
 import { 
   getFirestore, 
   collection, 
@@ -25,6 +25,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app); // <-- ২. Auth Initialize ebong Export kora holo
 const db = getFirestore(app);
 
 // Helper to map doc to data with ID
@@ -128,6 +129,6 @@ export const updateSettings = async (settings: Settings) => {
     bio, longBio, education, location, email,
     heroImageUrl, heroAnimation, heroBorderColor, heroAnimColor, heroAnimColor2, contentScale, language, socialLinks, theme
   };
-  
+
   return await setDoc(doc(db, 'settings', 'config'), data, { merge: true }); 
 };
