@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Theme, ThemeConfig } from '../types';
 import { fetchSettings } from '../services/firebase';
 
-const themes: Record<Theme, ThemeConfig> = {
+// Use type assertion here if your types.ts isn't updated yet
+const themes: Record<string, ThemeConfig> = {
   'Liquid OS': {
     name: 'Liquid OS',
     styles: {
@@ -237,31 +237,66 @@ const themes: Record<Theme, ThemeConfig> = {
       shadow: 'shadow-2xl shadow-purple-500/20',
       navIconHover: 'hover:text-yellow-300'
     }
+  },
+  // NEW CUTE THEMES
+  'Cotton Candy OS': {
+    name: 'Cotton Candy OS',
+    styles: {
+      appBg: 'bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100',
+      navBg: 'bg-white/40 backdrop-blur-md border-b border-white/60 shadow-sm',
+      textMain: 'text-slate-700 font-medium',
+      textSecondary: 'text-slate-500',
+      cardBg: 'bg-white/60 backdrop-blur-xl border border-white/80 hover:bg-white/80 hover:-translate-y-1 transition-all duration-300',
+      accentBg: 'bg-pink-400 hover:bg-pink-500',
+      accentText: 'text-pink-500 font-bold',
+      border: 'border-white/60',
+      font: 'font-sans',
+      button: 'bg-gradient-to-r from-pink-300 to-purple-300 text-white shadow-md hover:shadow-lg rounded-full',
+      radius: 'rounded-[2.5rem]',
+      shadow: 'shadow-xl shadow-pink-200/50',
+      navIconHover: 'hover:text-pink-500'
+    }
+  },
+  'Matcha OS': {
+    name: 'Matcha OS',
+    styles: {
+      appBg: 'bg-[#f4fadd]',
+      navBg: 'bg-white/60 backdrop-blur-md border-b border-[#dcedb9]',
+      textMain: 'text-[#4a5d23]',
+      textSecondary: 'text-[#7c9052]',
+      cardBg: 'bg-white border-2 border-[#dcedb9] hover:bg-[#fafdf3] hover:shadow-sm transition-all',
+      accentBg: 'bg-[#8da359] hover:bg-[#7c9052]',
+      accentText: 'text-[#8da359] font-bold',
+      border: 'border-[#dcedb9]',
+      font: 'font-sans',
+      button: 'bg-[#8da359] text-white shadow-sm hover:bg-[#7c9052]',
+      radius: 'rounded-3xl',
+      shadow: 'shadow-md shadow-[#8da359]/10',
+      navIconHover: 'hover:text-[#8da359]'
+    }
   }
 };
 
 interface ThemeContextType {
-  theme: Theme;
+  theme: string;
   themeConfig: ThemeConfig;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('Liquid OS');
+  const [theme, setTheme] = useState<string>('Liquid OS');
 
   // Load theme from Firebase settings on mount
   useEffect(() => {
     const initTheme = async () => {
       try {
         const settings = await fetchSettings();
-        // Ensure fetched theme is valid
         if (settings && settings.theme && themes[settings.theme]) {
           setTheme(settings.theme);
         } else {
-           // Fallback to local storage if DB fails or first time load optimization
-           const saved = localStorage.getItem('os_theme') as Theme;
+           const saved = localStorage.getItem('os_theme');
            if(saved && themes[saved]) setTheme(saved);
         }
       } catch (e) {
@@ -271,20 +306,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     initTheme();
   }, []);
 
-  const handleSetTheme = (newTheme: Theme) => {
+  const handleSetTheme = (newTheme: string) => {
     if(themes[newTheme]) {
       setTheme(newTheme);
-      // Persist locally for immediate reloads, but Admin will persist to DB
       localStorage.setItem('os_theme', newTheme);
     }
   };
 
-  // Safe fallback to prevent crashes if theme state is somehow invalid
   const currentThemeConfig = themes[theme] || themes['Liquid OS'];
 
   return (
     <ThemeContext.Provider value={{ theme, themeConfig: currentThemeConfig, setTheme: handleSetTheme }}>
-      <div className={`min-h-screen transition-all duration-700 ease-in-out ${currentThemeConfig.styles.appBg} ${currentThemeConfig.styles.font} ${currentThemeConfig.styles.textMain}`}>
+      {/* 🔴 THE FIX IS HERE: Added overflow-x-hidden, w-full, max-w-[100vw] 🔴 */}
+      <div className={`min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden transition-all duration-700 ease-in-out ${currentThemeConfig.styles.appBg} ${currentThemeConfig.styles.font} ${currentThemeConfig.styles.textMain}`}>
         {children}
       </div>
     </ThemeContext.Provider>
@@ -296,4 +330,3 @@ export const useTheme = () => {
   if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 };
-      
