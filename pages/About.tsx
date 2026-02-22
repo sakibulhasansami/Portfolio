@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchSettings } from '../services/firebase';
 import { Settings } from '../types';
-import { GraduationCap, MapPin, Mail, User } from 'lucide-react';
+// 🔴 NEW: Added MessageCircle icon for WhatsApp
+import { GraduationCap, MapPin, Mail, User, MessageCircle } from 'lucide-react';
 
 const About: React.FC = () => {
   const { themeConfig, theme } = useTheme();
@@ -18,12 +18,11 @@ const About: React.FC = () => {
   if (!data) return <div className="p-10 text-center opacity-50">{t.home.loading}</div>;
 
   const isCyber = theme === 'Cyber OS';
-  
-  // Clean, high-contrast style without shadows for Cyber OS
+
   const containerStyle = isCyber 
     ? { borderColor: '#FF0000', color: '#FF0000', backgroundColor: '#000000' } 
     : {};
-  
+
   const labelStyle = isCyber 
     ? { color: '#FF0000' } 
     : {};
@@ -32,7 +31,6 @@ const About: React.FC = () => {
     ? { color: '#FF0000' }
     : {};
 
-  // Updated container classes to include 'break-words' to prevent horizontal overflow
   const containerClasses = `
     p-5 md:p-6 border transition-all duration-300 hover:shadow-md flex flex-col justify-center
     break-words overflow-hidden
@@ -40,10 +38,9 @@ const About: React.FC = () => {
     ${!isCyber ? `${themeConfig.styles.cardBg} ${themeConfig.styles.border}` : 'border-2'}
   `;
 
-  // Apply Scale/DPI Setting - Only applying on larger screens to avoid mobile breaking
   const zoomLevel = data.contentScale || 1;
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  
+
   const scaleStyle: React.CSSProperties = !isMobile ? {
     zoom: zoomLevel,
     MozTransform: `scale(${zoomLevel})`,
@@ -53,9 +50,12 @@ const About: React.FC = () => {
     marginRight: zoomLevel !== 1 ? 'auto' : undefined,
   } : {};
 
+  // 🔴 NEW: WhatsApp Number Formatting (removes spaces, +, etc. for wa.me link)
+  const cleanWhatsAppNumber = data.whatsappNumber ? data.whatsappNumber.replace(/[^0-9]/g, '') : '';
+
   return (
     <div className="max-w-6xl mx-auto py-6 md:py-10 space-y-5 md:space-y-6 w-full" style={scaleStyle}>
-      
+
       {/* 1. HERO CONTAINER */}
       <div 
         className={`${containerClasses} md:flex-row gap-5 md:gap-8 items-start md:items-center min-h-[250px]`}
@@ -63,7 +63,6 @@ const About: React.FC = () => {
       >
         <div className="flex flex-col items-center md:items-start w-full">
            <div className="flex flex-col md:flex-row w-full gap-6 items-center">
-              {/* Image */}
               <div className="shrink-0">
                 <div className={`w-32 h-32 md:w-48 md:h-48 overflow-hidden border-4 shadow-lg ${themeConfig.styles.radius} ${isCyber ? 'border-[#FF0000]' : themeConfig.styles.border}`}>
                   <img 
@@ -73,8 +72,7 @@ const About: React.FC = () => {
                   />
                 </div>
               </div>
-              
-              {/* Name & Title */}
+
               <div className="text-center md:text-left w-full">
                 <h1 
                   className={`text-2xl md:text-5xl font-extrabold mb-2 tracking-tight ${themeConfig.styles.textMain}`}
@@ -88,7 +86,6 @@ const About: React.FC = () => {
               </div>
            </div>
 
-           {/* Short Bio */}
            <div className="mt-6 w-full border-t pt-4 opacity-90 text-sm md:text-lg leading-relaxed" style={{ borderColor: isCyber ? '#FF0000' : 'inherit' }}>
               <p className={isCyber ? 'text-red-100' : themeConfig.styles.textMain}>
                 {translateDynamic(data.bio) || t.about.heroBioDefault}
@@ -97,9 +94,10 @@ const About: React.FC = () => {
         </div>
       </div>
 
-      {/* 2, 3, 4. INFO CONTAINERS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
+      {/* 2, 3, 4, 5. INFO CONTAINERS */}
+      {/* 🔴 NEW: Dynamic Grid Layout depending on WhatsApp presence */}
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${data.whatsappNumber ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+
         {/* Education */}
         <div className={containerClasses} style={containerStyle}>
           <div className="flex items-center gap-3 mb-2">
@@ -133,9 +131,33 @@ const About: React.FC = () => {
           </p>
         </div>
 
+        {/* 🔴 NEW: WhatsApp Direct Message Card */}
+        {data.whatsappNumber && (
+          <a 
+            href={`https://wa.me/${cleanWhatsAppNumber}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={`${containerClasses} cursor-pointer hover:scale-[1.03] active:scale-95 transition-all !bg-opacity-80 hover:!bg-opacity-100`} 
+            style={{ ...containerStyle, border: isCyber ? '2px solid #FF0000' : `2px solid #25D366` }}
+            title="Click to chat on WhatsApp"
+          >
+            <div className="flex items-center gap-3 mb-2">
+               {/* 25D366 is the official WhatsApp Green color */}
+               <MessageCircle size={24} className={isCyber ? 'text-[#FF0000]' : 'text-[#25D366] drop-shadow-md'} />
+               <h3 className="text-lg font-bold uppercase tracking-wider" style={labelStyle}>WhatsApp</h3>
+            </div>
+            <p className="text-base md:text-lg font-medium break-all">
+              {data.whatsappNumber}
+            </p>
+            <span className="text-xs opacity-60 mt-2 font-bold uppercase tracking-widest">
+              Direct Message ↗
+            </span>
+          </a>
+        )}
+
       </div>
 
-      {/* 5. LONG BIOGRAPHY CONTAINER */}
+      {/* LONG BIOGRAPHY CONTAINER */}
       <div className={containerClasses} style={containerStyle}>
         <div className="flex items-center gap-3 mb-4">
            <User size={24} className={isCyber ? 'text-[#FF0000]' : themeConfig.styles.accentText} />
@@ -151,4 +173,3 @@ const About: React.FC = () => {
 };
 
 export default About;
-                                                                                                
