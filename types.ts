@@ -1,4 +1,3 @@
-
 export interface Photo {
   id: string;
   title: string;
@@ -30,6 +29,18 @@ export interface SocialLink {
   platform: string;
   url: string;
   iconClass: string; // e.g. "fa-brands fa-facebook"
+}
+
+// 🔴 NEW: Comment Interface (For Home, Projects, Writings & Photos)
+export interface Comment {
+  id: string;
+  itemId: string; // 'home' for home page, or specific Photo/Project/Writing ID
+  name: string;
+  email: string;
+  message: string;
+  isApproved: boolean; // True only if admin approves
+  isPinned: boolean; // True to show on the top/front
+  createdAt: number; // Timestamp for sorting
 }
 
 export type AnimationType = 
@@ -67,7 +78,9 @@ export type Theme =
   | 'Sunset OS' 
   | 'Deep Sea OS' 
   | 'Matrix OS' 
-  | 'Glass OS';
+  | 'Glass OS'
+  | 'Cotton Candy OS' 
+  | 'Matcha OS';      
 
 export interface Settings {
   bio: string;
@@ -75,15 +88,17 @@ export interface Settings {
   education: string;
   location: string;
   email: string;
+  whatsappNumber?: string; // 🔴 NEW: For Direct WhatsApp Message
   heroImageUrl: string;
   heroAnimation: AnimationType;
   heroBorderColor: string; 
   heroAnimColor: string;   
   heroAnimColor2: string;
   contentScale: number;
-  language: 'en' | 'bn' | 'es' | 'hi' | 'fr';
-  theme: Theme; // New: Persist theme in DB
-  socialLinks: SocialLink[]; // New Dynamic Socials
+  // 🔴 UPDATED: Added popular language codes + 'string' so you can add ANY language later
+  language: 'en' | 'bn' | 'ar' | 'hi' | 'es' | 'fr' | 'de' | 'zh-CN' | 'ja' | 'ru' | 'pt' | 'it' | 'ko' | 'tr' | 'ur' | string;
+  theme: Theme; 
+  socialLinks: SocialLink[]; 
 }
 
 export interface ThemeConfig {
@@ -101,6 +116,6 @@ export interface ThemeConfig {
     button: string;
     radius: string;
     shadow: string;
-    navIconHover: string; // New: Specific hover color for nav icons
+    navIconHover: string; 
   };
 }
