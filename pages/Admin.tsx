@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-// 🔴 NEW: Added fetchComments, updateComment, deleteComment
 import { addPhoto, addWriting, addProject, updateSettings, fetchSettings, auth, fetchComments, updateComment, deleteComment } from '../services/firebase'; 
 import { signInWithEmailAndPassword } from 'firebase/auth'; 
-// 🔴 NEW: Added MessageSquare, CheckCircle, Pin for Comments UI
 import { Lock, LogOut, Save, Loader2, Monitor, Plus, Trash2, Image as ImageIcon, Book, Briefcase, Settings as SettingsIcon, MessageSquare, CheckCircle, Pin } from 'lucide-react';
-// 🔴 NEW: Added Comment type
 import { AnimationType, Theme, Settings, SocialLink, Comment } from '../types';
 
 const Admin: React.FC = () => {
@@ -16,7 +13,6 @@ const Admin: React.FC = () => {
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
-  // 🔴 NEW: Added 'comments' to activeTab
   const [activeTab, setActiveTab] = useState<'general' | 'comments' | 'gallery' | 'library' | 'projects'>('general');
 
   // Forms
@@ -26,7 +22,6 @@ const Admin: React.FC = () => {
     title: '', category: '', tags: '', img1: '', img2: '', img3: '', link: '', description: '' 
   });
 
-  // 🔴 NEW: State for storing fetched comments
   const [commentsList, setCommentsList] = useState<Comment[]>([]);
 
   const [settings, setSettings] = useState<Settings>({
@@ -69,7 +64,6 @@ const Admin: React.FC = () => {
     });
   }, []);
 
-  // 🔴 NEW: Fetch comments when 'comments' tab is opened
   useEffect(() => {
     if (activeTab === 'comments') {
       fetchComments().then(data => setCommentsList(data));
@@ -97,7 +91,6 @@ const Admin: React.FC = () => {
     setEmail('');
   };
 
-  // --- SUBMIT HANDLERS ---
   const handlePhotoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try { await addPhoto(photoForm); setMessage('Photo added successfully!'); setPhotoForm({ title: '', category: '', imageUrl: '', tag: '' }); setTimeout(() => setMessage(''), 3000); } catch (error) { setMessage('Error adding photo'); }
@@ -133,7 +126,6 @@ const Admin: React.FC = () => {
     } catch (error) { setMessage('Error updating settings'); console.error(error); } finally { setIsSaving(false); }
   };
 
-  // 🔴 NEW: Comment Handlers (Approve, Pin, Delete)
   const toggleCommentApproval = async (id: string, currentStatus: boolean) => {
     try {
       await updateComment(id, { isApproved: !currentStatus });
@@ -156,7 +148,6 @@ const Admin: React.FC = () => {
     } catch (error) { console.error("Error deleting comment", error); }
   };
 
-  // --- HELPER HANDLERS ---
   const updateSetting = (key: keyof Settings, value: any) => setSettings(prev => ({ ...prev, [key]: value }));
   const updateSocialLink = (index: number, key: keyof SocialLink, value: string) => {
     const updated = [...settings.socialLinks]; updated[index] = { ...updated[index], [key]: value };
@@ -211,7 +202,6 @@ const Admin: React.FC = () => {
       {/* TABS */}
       <div className="flex overflow-x-auto gap-2 border-b border-gray-500/30 mb-6 custom-scrollbar">
         <button onClick={() => setActiveTab('general')} className={TabButtonClass(activeTab === 'general')}><SettingsIcon size={18} /> General</button>
-        {/* 🔴 NEW: Comments Tab Button */}
         <button onClick={() => setActiveTab('comments')} className={TabButtonClass(activeTab === 'comments')}><MessageSquare size={18} /> Comments</button>
         <button onClick={() => setActiveTab('gallery')} className={TabButtonClass(activeTab === 'gallery')}><ImageIcon size={18} /> Gallery</button>
         <button onClick={() => setActiveTab('library')} className={TabButtonClass(activeTab === 'library')}><Book size={18} /> Writings</button>
@@ -232,7 +222,6 @@ const Admin: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div><label className={LabelClass}>Email</label><input type="text" value={settings.email} onChange={e => updateSetting('email', e.target.value)} className={InputClass} /></div>
-                 {/* 🔴 NEW: WhatsApp Number Input */}
                  <div><label className={LabelClass}>WhatsApp Number</label><input type="text" placeholder="+8801..." value={settings.whatsappNumber || ''} onChange={e => updateSetting('whatsappNumber', e.target.value)} className={InputClass} /></div>
               </div>
               <div><label className={LabelClass}>Long Biography</label><textarea value={settings.longBio} onChange={e => updateSetting('longBio', e.target.value)} className={InputClass + " h-40"} /></div>
@@ -240,8 +229,6 @@ const Admin: React.FC = () => {
               {/* Theme & Visuals */}
               <div className="pt-4 border-t border-gray-500/30">
                 <h3 className="font-bold mb-3 opacity-80">Visuals & Language</h3>
-                
-                {/* 🔴 NEW: Default Language Setting */}
                 <div className="mb-4">
                   <label className={LabelClass}>Default Language (For Users)</label>
                   <select value={settings.language || 'bn'} onChange={e => updateSetting('language', e.target.value)} className={InputClass + " appearance-none text-black"}>
@@ -253,7 +240,6 @@ const Admin: React.FC = () => {
                     <option value="fr">French (fr)</option>
                   </select>
                 </div>
-
                 <div className="mb-4">
                   <label className={LabelClass}>Theme (Site Wide)</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -287,17 +273,13 @@ const Admin: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
                 <div><label className={LabelClass}>DPI Scale: {settings.contentScale}</label><input type="range" min="0.8" max="1.3" step="0.05" value={settings.contentScale || 1} onChange={e => updateSetting('contentScale', parseFloat(e.target.value))} className="w-full" /></div>
               </div>
-
               <button type="submit" disabled={isSaving} className={`mt-4 px-4 py-3 ${themeConfig.styles.radius} w-full font-bold flex justify-center items-center gap-2 ${themeConfig.styles.button}`}>{isSaving ? <Loader2 className="animate-spin" /> : <Save size={18} />} Save All Settings</button>
             </form>
           </section>
 
-          {/* Social Links Manager */}
           <section className={`p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
-             {/* ... (Social link manager code remains exactly the same as your previous version) ... */}
             <h2 className="text-xl font-bold mb-4 border-b pb-2 border-current opacity-50">Social Media Links (Footer)</h2>
             <div className="space-y-2 mb-4">
               {settings.socialLinks?.map((link, idx) => (
@@ -323,7 +305,7 @@ const Admin: React.FC = () => {
         </div>
       )}
 
-      {/* 🔴 NEW: COMMENTS TAB */}
+      {/* COMMENTS TAB */}
       {activeTab === 'comments' && (
         <section className={`w-full p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <div className="flex justify-between items-center mb-6 border-b pb-2 border-current opacity-80">
@@ -349,25 +331,14 @@ const Admin: React.FC = () => {
                     <p className="text-sm mt-3 opacity-90 break-words">{comment.message}</p>
                   </div>
                   
-                  {/* Action Buttons */}
                   <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-500/20">
-                    <button 
-                      onClick={() => toggleCommentApproval(comment.id, comment.isApproved)}
-                      className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isApproved ? 'bg-green-500/20 text-green-500 border-green-500/50' : 'hover:bg-green-500/10 border-gray-500/30'}`}
-                    >
+                    <button onClick={() => toggleCommentApproval(comment.id, comment.isApproved)} className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isApproved ? 'bg-green-500/20 text-green-500 border-green-500/50' : 'hover:bg-green-500/10 border-gray-500/30'}`}>
                       <CheckCircle size={14} /> {comment.isApproved ? 'Approved' : 'Approve'}
                     </button>
-                    <button 
-                      onClick={() => toggleCommentPin(comment.id, comment.isPinned)}
-                      className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isPinned ? 'bg-blue-500/20 text-blue-500 border-blue-500/50' : 'hover:bg-blue-500/10 border-gray-500/30'}`}
-                    >
+                    <button onClick={() => toggleCommentPin(comment.id, comment.isPinned)} className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isPinned ? 'bg-blue-500/20 text-blue-500 border-blue-500/50' : 'hover:bg-blue-500/10 border-gray-500/30'}`}>
                       <Pin size={14} /> {comment.isPinned ? 'Pinned' : 'Pin'}
                     </button>
-                    <button 
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="p-1.5 text-red-500 hover:bg-red-500/10 rounded border border-gray-500/30 transition-colors"
-                      title="Delete Comment"
-                    >
+                    <button onClick={() => handleDeleteComment(comment.id)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded border border-gray-500/30 transition-colors" title="Delete Comment">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -420,4 +391,14 @@ const Admin: React.FC = () => {
                <input type="text" placeholder="Image 2 (Detail)" className={InputClass} value={projectForm.img2} onChange={e => setProjectForm({...projectForm, img2: e.target.value})} />
                <input type="text" placeholder="Image 3 (Detail)" className={InputClass} value={projectForm.img3} onChange={e => setProjectForm({...projectForm, img3: e.target.value})} />
             </div>
-            <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: 
+            <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: e.target.value})} />
+            <textarea placeholder="Description" required className={InputClass + " h-24"} value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} />
+            <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Project</button>
+          </form>
+        </section>
+      )}
+    </div>
+  );
+};
+
+export default Admin;
