@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
@@ -14,7 +13,7 @@ const Home: React.FC = () => {
   const [bio, setBio] = useState<string>(t.home.loading);
   const [heroImage, setHeroImage] = useState<string>('');
   const [heroAnim, setHeroAnim] = useState<AnimationType>('anim-static');
-  
+
   // Custom Color States
   const [heroBorderColor, setHeroBorderColor] = useState<string>('');
   const [heroAnimColor, setHeroAnimColor] = useState<string>('');
@@ -35,21 +34,19 @@ const Home: React.FC = () => {
     loadData();
   }, [t]);
 
-  // Cyber OS Color Logic: Green (#00FF41) & Red (#FF0000)
   const getBoxStyle = (index: number) => {
     if (theme === 'Cyber OS') {
-      // 0: Green, 1: Red, 2: Red, 3: Green -> Balanced 50/50
       const isRed = index === 1 || index === 2;
       const color = isRed ? '#FF0000' : '#00FF41';
-      
+
       return {
         borderColor: color,
         color: color,
-        boxShadow: 'none', // Removed flashy neon glow
-        backgroundColor: '#000000' // Solid black for readability
+        boxShadow: 'none', 
+        backgroundColor: '#000000' 
       };
     }
-    return {}; // Use default theme styles for other OS
+    return {}; 
   };
 
   const navBoxes = [
@@ -61,7 +58,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[75vh] w-full max-w-2xl mx-auto space-y-8">
-      
+
       {/* FULL PAGE BACKGROUND CANVAS */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-40 w-full h-full overflow-hidden">
          <HeroCanvas type={heroAnim} color1={heroAnimColor} color2={heroAnimColor2} />
@@ -69,43 +66,39 @@ const Home: React.FC = () => {
 
       {/* Hero Section */}
       <div className="relative z-10 group text-center mt-4">
-        {/* Profile Image Container - Rounded, No Overflow on Parent for Glows */}
         <div className="relative w-40 h-40 md:w-52 md:h-52 mx-auto mb-6">
-          
           <div 
             className={`relative z-10 w-full h-full border-4 p-1 rounded-full ${heroAnim} ${themeConfig.styles.cardBg} ${themeConfig.styles.shadow}`}
             style={{ borderColor: heroBorderColor || undefined }}
           >
-            {/* Inner Image Container - Clips the image to circle */}
             <img 
               src={heroImage || "https://picsum.photos/200"} 
               alt="Profile" 
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          
-          {/* Decorative Ring (Cyber OS only) */}
+
           {theme === 'Cyber OS' && (
             <div className="absolute -inset-2 rounded-full border border-[#00FF41]/30 animate-spin-slow pointer-events-none z-20"></div>
           )}
         </div>
 
-        {/* Text Content */}
+        {/* Text Content - Removed "reveal" and delays for instant appearance */}
         <div className="space-y-3 px-4">
-          <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight ${themeConfig.styles.textMain} reveal`}>
+          <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight ${themeConfig.styles.textMain}`}>
             Sakibul Hasan Sami
           </h1>
-          <p className={`text-sm md:text-base max-w-md mx-auto leading-relaxed ${themeConfig.styles.textSecondary} reveal delay-100 font-medium`}>
+          <p className={`text-sm md:text-base max-w-md mx-auto leading-relaxed ${themeConfig.styles.textSecondary} font-medium`}>
             {translateDynamic(bio)}
           </p>
         </div>
       </div>
 
-      {/* Navigation Grid - 2x2 */}
-      <div className="relative z-10 grid grid-cols-2 gap-4 w-full px-4 sm:px-8 reveal delay-200">
+      {/* Navigation Grid - Removed "reveal" class */}
+      <div className="relative z-10 grid grid-cols-2 gap-4 w-full px-4 sm:px-8">
         {navBoxes.map((box, idx) => {
           const cyberStyle = getBoxStyle(idx);
-          
+
           return (
             <Link 
               key={box.path} 
