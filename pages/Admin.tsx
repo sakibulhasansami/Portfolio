@@ -1,33 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { addPhoto, addWriting, addProject, updateSettings, fetchSettings, auth } from '../services/firebase'; // Added auth import
-import { signInWithEmailAndPassword } from 'firebase/auth'; // Firebase auth function
-import { Lock, LogOut, Save, Loader2, Monitor, Plus, Trash2, Image as ImageIcon, Book, Briefcase, Settings as SettingsIcon } from 'lucide-react';
-import { AnimationType, Theme, Settings, SocialLink } from '../types';
+// 🔴 NEW: Added fetchComments, updateComment, deleteComment
+import { addPhoto, addWriting, addProject, updateSettings, fetchSettings, auth, fetchComments, updateComment, deleteComment } from '../services/firebase'; 
+import { signInWithEmailAndPassword } from 'firebase/auth'; 
+// 🔴 NEW: Added MessageSquare, CheckCircle, Pin for Comments UI
+import { Lock, LogOut, Save, Loader2, Monitor, Plus, Trash2, Image as ImageIcon, Book, Briefcase, Settings as SettingsIcon, MessageSquare, CheckCircle, Pin } from 'lucide-react';
+// 🔴 NEW: Added Comment type
+import { AnimationType, Theme, Settings, SocialLink, Comment } from '../types';
 
 const Admin: React.FC = () => {
   const { themeConfig, setTheme, theme } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [email, setEmail] = useState(''); // New Email state
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'library' | 'projects'>('general');
+  
+  // 🔴 NEW: Added 'comments' to activeTab
+  const [activeTab, setActiveTab] = useState<'general' | 'comments' | 'gallery' | 'library' | 'projects'>('general');
 
   // Forms
   const [photoForm, setPhotoForm] = useState({ title: '', category: '', imageUrl: '', tag: '' });
   const [writingForm, setWritingForm] = useState({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' });
   const [projectForm, setProjectForm] = useState({ 
-    title: '', 
-    category: '', 
-    tags: '', 
-    img1: '', img2: '', img3: '', 
-    link: '', 
-    description: '' 
+    title: '', category: '', tags: '', img1: '', img2: '', img3: '', link: '', description: '' 
   });
 
+  // 🔴 NEW: State for storing fetched comments
+  const [commentsList, setCommentsList] = useState<Comment[]>([]);
+
   const [settings, setSettings] = useState<Settings>({
-    bio: '', longBio: '', education: '', location: '', email: '',
+    bio: '', longBio: '', education: '', location: '', email: '', whatsappNumber: '',
     heroImageUrl: '', heroAnimation: 'anim-static', heroBorderColor: '#000000',
     heroAnimColor: '#06b6d4', heroAnimColor2: '#ec4899', contentScale: 1,
     language: 'bn', theme: 'Liquid OS', socialLinks: []
@@ -42,7 +45,6 @@ const Admin: React.FC = () => {
     'anim-canvas-matrix', 'anim-canvas-dna', 'anim-canvas-network', 'anim-canvas-ramadan', 'anim-canvas-bijoy'
   ];
 
-  // 🔴 EIKHANE NOTUN THEME DUTO ADD KORA HOYECHE 🔴
   const themeOptions: Theme[] = [
     'Liquid OS', 'BD Theme', 'Cyber OS', 'Sakura OS', 'AMOLED OS', 'Retro OS', 
     'Minimal OS', 'Toxic OS', 'Nordic OS', 'Sunset OS', 'Deep Sea OS', 'Matrix OS', 'Glass OS',
@@ -67,14 +69,18 @@ const Admin: React.FC = () => {
     });
   }, []);
 
-  // Updated Login Function for Firebase Auth
+  // 🔴 NEW: Fetch comments when 'comments' tab is opened
+  useEffect(() => {
+    if (activeTab === 'comments') {
+      fetchComments().then(data => setCommentsList(data));
+    }
+  }, [activeTab]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setMessage('Verifying...');
-      // Firebase function calls your database
       await signInWithEmailAndPassword(auth, email, password);
-
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_auth', 'true');
       setMessage('');
@@ -127,6 +133,29 @@ const Admin: React.FC = () => {
     } catch (error) { setMessage('Error updating settings'); console.error(error); } finally { setIsSaving(false); }
   };
 
+  // 🔴 NEW: Comment Handlers (Approve, Pin, Delete)
+  const toggleCommentApproval = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateComment(id, { isApproved: !currentStatus });
+      setCommentsList(commentsList.map(c => c.id === id ? { ...c, isApproved: !currentStatus } : c));
+    } catch (error) { console.error("Error updating comment", error); }
+  };
+
+  const toggleCommentPin = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateComment(id, { isPinned: !currentStatus });
+      setCommentsList(commentsList.map(c => c.id === id ? { ...c, isPinned: !currentStatus } : c));
+    } catch (error) { console.error("Error pinning comment", error); }
+  };
+
+  const handleDeleteComment = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    try {
+      await deleteComment(id);
+      setCommentsList(commentsList.filter(c => c.id !== id));
+    } catch (error) { console.error("Error deleting comment", error); }
+  };
+
   // --- HELPER HANDLERS ---
   const updateSetting = (key: keyof Settings, value: any) => setSettings(prev => ({ ...prev, [key]: value }));
   const updateSocialLink = (index: number, key: keyof SocialLink, value: string) => {
@@ -143,7 +172,7 @@ const Admin: React.FC = () => {
 
   const InputClass = `w-full p-2 ${themeConfig.styles.radius} mb-4 bg-transparent border ${themeConfig.styles.border} ${themeConfig.styles.textMain} focus:outline-none focus:border-opacity-100 placeholder-opacity-50`;
   const LabelClass = `block mb-1 text-sm font-bold ${themeConfig.styles.accentText}`;
-  const TabButtonClass = (isActive: boolean) => `flex items-center gap-2 px-4 py-2 rounded-t-lg font-bold transition-all ${isActive ? `${themeConfig.styles.cardBg} border-t border-x ${themeConfig.styles.border} border-b-0` : `opacity-60 hover:opacity-100 hover:bg-black/5`}`;
+  const TabButtonClass = (isActive: boolean) => `flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-t-lg font-bold transition-all ${isActive ? `${themeConfig.styles.cardBg} border-t border-x ${themeConfig.styles.border} border-b-0` : `opacity-60 hover:opacity-100 hover:bg-black/5`}`;
 
   if (!isAuthenticated) {
     return (
@@ -157,24 +186,8 @@ const Admin: React.FC = () => {
             <p className={`text-sm mt-2 ${themeConfig.styles.textSecondary}`}>Restricted area. Please identify yourself.</p>
           </div>
           <form onSubmit={handleLogin}>
-            {/* Added Email Input Field */}
-            <input 
-              type="email" 
-              placeholder="Enter Email" 
-              required 
-              className={InputClass} 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              autoFocus 
-            />
-            <input 
-              type="password" 
-              placeholder="Enter Password" 
-              required 
-              className={InputClass} 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-            />
+            <input type="email" placeholder="Enter Email" required className={InputClass} value={email} onChange={e => setEmail(e.target.value)} autoFocus />
+            <input type="password" placeholder="Enter Password" required className={InputClass} value={password} onChange={e => setPassword(e.target.value)} />
             {message && <div className="mb-4 text-sm text-red-500 text-center font-medium">{message}</div>}
             <button type="submit" className={`w-full py-3 ${themeConfig.styles.radius} font-bold transition-transform active:scale-95 ${themeConfig.styles.button}`}>Unlock Dashboard</button>
           </form>
@@ -196,8 +209,10 @@ const Admin: React.FC = () => {
       {message && <div className={`p-4 mb-6 ${themeConfig.styles.radius} ${themeConfig.styles.accentBg} text-white animate-fade-in`}>{message}</div>}
 
       {/* TABS */}
-      <div className="flex overflow-x-auto gap-2 border-b border-gray-500/30 mb-6">
+      <div className="flex overflow-x-auto gap-2 border-b border-gray-500/30 mb-6 custom-scrollbar">
         <button onClick={() => setActiveTab('general')} className={TabButtonClass(activeTab === 'general')}><SettingsIcon size={18} /> General</button>
+        {/* 🔴 NEW: Comments Tab Button */}
+        <button onClick={() => setActiveTab('comments')} className={TabButtonClass(activeTab === 'comments')}><MessageSquare size={18} /> Comments</button>
         <button onClick={() => setActiveTab('gallery')} className={TabButtonClass(activeTab === 'gallery')}><ImageIcon size={18} /> Gallery</button>
         <button onClick={() => setActiveTab('library')} className={TabButtonClass(activeTab === 'library')}><Book size={18} /> Writings</button>
         <button onClick={() => setActiveTab('projects')} className={TabButtonClass(activeTab === 'projects')}><Briefcase size={18} /> Projects</button>
@@ -215,12 +230,30 @@ const Admin: React.FC = () => {
                 <div><label className={LabelClass}>Education</label><input type="text" value={settings.education} onChange={e => updateSetting('education', e.target.value)} className={InputClass} /></div>
                 <div><label className={LabelClass}>Location</label><input type="text" value={settings.location} onChange={e => updateSetting('location', e.target.value)} className={InputClass} /></div>
               </div>
-              <div><label className={LabelClass}>Email</label><input type="text" value={settings.email} onChange={e => updateSetting('email', e.target.value)} className={InputClass} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div><label className={LabelClass}>Email</label><input type="text" value={settings.email} onChange={e => updateSetting('email', e.target.value)} className={InputClass} /></div>
+                 {/* 🔴 NEW: WhatsApp Number Input */}
+                 <div><label className={LabelClass}>WhatsApp Number</label><input type="text" placeholder="+8801..." value={settings.whatsappNumber || ''} onChange={e => updateSetting('whatsappNumber', e.target.value)} className={InputClass} /></div>
+              </div>
               <div><label className={LabelClass}>Long Biography</label><textarea value={settings.longBio} onChange={e => updateSetting('longBio', e.target.value)} className={InputClass + " h-40"} /></div>
 
               {/* Theme & Visuals */}
               <div className="pt-4 border-t border-gray-500/30">
-                <h3 className="font-bold mb-3 opacity-80">Visuals</h3>
+                <h3 className="font-bold mb-3 opacity-80">Visuals & Language</h3>
+                
+                {/* 🔴 NEW: Default Language Setting */}
+                <div className="mb-4">
+                  <label className={LabelClass}>Default Language (For Users)</label>
+                  <select value={settings.language || 'bn'} onChange={e => updateSetting('language', e.target.value)} className={InputClass + " appearance-none text-black"}>
+                    <option value="en">English (en)</option>
+                    <option value="bn">Bengali (bn)</option>
+                    <option value="ar">Arabic (ar)</option>
+                    <option value="hi">Hindi (hi)</option>
+                    <option value="es">Spanish (es)</option>
+                    <option value="fr">French (fr)</option>
+                  </select>
+                </div>
+
                 <div className="mb-4">
                   <label className={LabelClass}>Theme (Site Wide)</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -231,7 +264,6 @@ const Admin: React.FC = () => {
                 </div>
                 <div className="mb-4"><label className={LabelClass}>Animation</label><select value={settings.heroAnimation} onChange={e => updateSetting('heroAnimation', e.target.value)} className={InputClass + " appearance-none text-black"}>{animationOptions.map(a => <option key={a} value={a}>{a}</option>)}</select></div>
 
-                {/* NEW COLOR PICKERS */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className={LabelClass}>Border Color</label>
@@ -265,6 +297,7 @@ const Admin: React.FC = () => {
 
           {/* Social Links Manager */}
           <section className={`p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
+             {/* ... (Social link manager code remains exactly the same as your previous version) ... */}
             <h2 className="text-xl font-bold mb-4 border-b pb-2 border-current opacity-50">Social Media Links (Footer)</h2>
             <div className="space-y-2 mb-4">
               {settings.socialLinks?.map((link, idx) => (
@@ -290,6 +323,61 @@ const Admin: React.FC = () => {
         </div>
       )}
 
+      {/* 🔴 NEW: COMMENTS TAB */}
+      {activeTab === 'comments' && (
+        <section className={`w-full p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
+          <div className="flex justify-between items-center mb-6 border-b pb-2 border-current opacity-80">
+            <h2 className="text-xl font-bold">Manage Comments ({commentsList.length})</h2>
+          </div>
+          
+          {commentsList.length === 0 ? (
+            <p className="text-center opacity-50 py-10">No comments found.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {commentsList.map((comment) => (
+                <div key={comment.id} className={`p-4 border rounded-lg flex flex-col justify-between ${comment.isApproved ? 'border-green-500/50' : 'border-gray-500/30'}`}>
+                  <div>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-bold text-lg leading-tight">{comment.name}</h3>
+                        <p className="text-xs opacity-60">{comment.email}</p>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold px-2 py-1 rounded bg-black/10 border border-current opacity-70">
+                        {comment.itemId === 'home' ? 'Home Page' : 'Specific Item'}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-3 opacity-90 break-words">{comment.message}</p>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-500/20">
+                    <button 
+                      onClick={() => toggleCommentApproval(comment.id, comment.isApproved)}
+                      className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isApproved ? 'bg-green-500/20 text-green-500 border-green-500/50' : 'hover:bg-green-500/10 border-gray-500/30'}`}
+                    >
+                      <CheckCircle size={14} /> {comment.isApproved ? 'Approved' : 'Approve'}
+                    </button>
+                    <button 
+                      onClick={() => toggleCommentPin(comment.id, comment.isPinned)}
+                      className={`flex-1 flex justify-center items-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${comment.isPinned ? 'bg-blue-500/20 text-blue-500 border-blue-500/50' : 'hover:bg-blue-500/10 border-gray-500/30'}`}
+                    >
+                      <Pin size={14} /> {comment.isPinned ? 'Pinned' : 'Pin'}
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="p-1.5 text-red-500 hover:bg-red-500/10 rounded border border-gray-500/30 transition-colors"
+                      title="Delete Comment"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* GALLERY TAB */}
       {activeTab === 'gallery' && (
         <section className={`max-w-xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
@@ -304,7 +392,7 @@ const Admin: React.FC = () => {
         </section>
       )}
 
-               {/* WRITINGS TAB */}
+      {/* WRITINGS TAB */}
       {activeTab === 'library' && (
         <section className={`max-w-xl mx-auto p-6 ${themeConfig.styles.radius} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}`}>
           <h2 className="text-xl font-bold mb-4">Add New Writing</h2>
@@ -332,14 +420,4 @@ const Admin: React.FC = () => {
                <input type="text" placeholder="Image 2 (Detail)" className={InputClass} value={projectForm.img2} onChange={e => setProjectForm({...projectForm, img2: e.target.value})} />
                <input type="text" placeholder="Image 3 (Detail)" className={InputClass} value={projectForm.img3} onChange={e => setProjectForm({...projectForm, img3: e.target.value})} />
             </div>
-            <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: e.target.value})} />
-            <textarea placeholder="Description" required className={InputClass + " h-24"} value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} />
-            <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Project</button>
-          </form>
-        </section>
-      )}
-    </div>
-  );
-};
-
-export default Admin;
+            <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: 
