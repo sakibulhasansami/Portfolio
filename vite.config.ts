@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      // 🔴 NEW: Build configuration added to fix the chunk size warning
+      build: {
+        chunkSizeWarningLimit: 1600,
       }
     };
 });
