@@ -10,9 +10,13 @@ import {
   DocumentData,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  deleteDoc,  // 🔴 NEW: For deleting comments
+  updateDoc,  // 🔴 NEW: For updating comment status (approve/pin)
+  where,      // 🔴 NEW: For filtering comments by itemId
+  orderBy     // 🔴 NEW: For sorting comments by time
 } from 'firebase/firestore';
-import { Photo, Writing, Settings, Project } from '../types';
+import { Photo, Writing, Settings, Project, Comment } from '../types'; // 🔴 NEW: Added Comment import
 
 const firebaseConfig = {
   apiKey: "AIzaSyDwwnW4xfWaNaA4fJBEdogKgSu_4BAHMPA",
@@ -42,6 +46,7 @@ export const fetchSettings = async (): Promise<Settings | null> => {
       education: '',
       location: '',
       email: '',
+      whatsappNumber: '', // 🔴 NEW: WhatsApp Number default
       heroImageUrl: 'https://picsum.photos/400/400?grayscale',
       heroAnimation: 'anim-static',
       heroBorderColor: '',
@@ -121,14 +126,55 @@ export const addProject = async (data: Omit<Project, 'id'>) => {
 
 export const updateSettings = async (settings: Settings) => {
   const { 
-    bio, longBio, education, location, email,
+    bio, longBio, education, location, email, whatsappNumber, // 🔴 NEW: Extracted whatsappNumber
     heroImageUrl, heroAnimation, heroBorderColor, heroAnimColor, heroAnimColor2, contentScale, language, socialLinks, theme
   } = settings;
 
   const data = { 
-    bio, longBio, education, location, email,
+    bio, longBio, education, location, email, whatsappNumber, // 🔴 NEW: Saved whatsappNumber
     heroImageUrl, heroAnimation, heroBorderColor, heroAnimColor, heroAnimColor2, contentScale, language, socialLinks, theme
   };
 
   return await setDoc(doc(db, 'settings', 'config'), data, { merge: true }); 
+};
+
+// ==========================================
+// 🔴 NEW: COMMENT SYSTEM FUNCTIONS
+// ==========================================
+
+// Fetch comments (If itemId is passed, fetch specific item's comments. Else fetch all for Admin)
+export const fetchComments = async (itemId?: string): Promise<Comment[]> => {
+  try {
+    const colRef = collection(db, 'comments');
+    let q;
+    if (itemId) {
+      // Fetch specific item's comments (e.g., specific project or photo)
+      q = query(colRef, where('itemId', '==', itemId), orderBy('createdAt', 'desc'));
+    } else {
+      // Fetch all comments for Admin panel
+      q = query(colRef, orderBy('createdAt', 'desc'));
+    }
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => mapDoc<Comment>(doc));
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    return [];
+  }
+};
+
+// Add a new comment
+export const addComment = async (data: Omit<Comment, 'id'>) => {
+  return await addDoc(collection(db, 'comments'), data);
+};
+
+// Update comment status (e.g., approve or pin)
+export const updateComment = async (id: string, updates: Partial<Comment>) => {
+  const docRef = doc(db, 'comments', id);
+  return await updateDoc(docRef, updates);
+};
+
+// Delete a comment
+export const deleteComment = async (id: string) => {
+  const docRef = doc(db, 'comments', id);
+  return await deleteDoc(docRef);
 };
