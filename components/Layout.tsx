@@ -14,30 +14,30 @@ const Layout: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
 
-  // Footer Data
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contactEmail, setContactEmail] = useState("sakibulhasansami863@gmail.com");
   const [contactLoc, setContactLoc] = useState("Rajshahi, Bangladesh");
 
-  // 🔴 Ref use korle performance bhalo hoy r rerender hoy na
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const touchEndPos = useRef<{ x: number; y: number } | null>(null);
 
   const navOrder = ['/', '/gallery', '/writings', '/projects', '/about'];
-  const prevIndex = useRef(navOrder.indexOf(location.pathname));
-  const [animClass, setAnimClass] = useState('slide-in-right');
+
+  // ✅ FIX: animClass শুধু transition এর জন্য, active check এর সাথে কোনো সম্পর্ক নেই
+  const prevPathRef = useRef(location.pathname);
+  const [animClass, setAnimClass] = useState('');
 
   useEffect(() => {
     fetchSettings().then(settings => {
       if (settings) {
-        if (settings.socialLinks && settings.socialLinks.length > 0) {
-          setSocialLinks(settings.socialLinks);
-        } else {
-          setSocialLinks([
-            { platform: 'Facebook', url: '#', iconClass: 'fa-brands fa-facebook' },
-            { platform: 'Instagram', url: '#', iconClass: 'fa-brands fa-instagram' }
-          ]);
-        }
+        setSocialLinks(
+          settings.socialLinks?.length > 0
+            ? settings.socialLinks
+            : [
+                { platform: 'Facebook', url: '#', iconClass: 'fa-brands fa-facebook' },
+                { platform: 'Instagram', url: '#', iconClass: 'fa-brands fa-instagram' },
+              ]
+        );
         if (settings.email) setContactEmail(settings.email);
         if (settings.location) setContactLoc(settings.location);
       }
@@ -48,54 +48,54 @@ const Layout: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [location.pathname]);
 
-  // Page Transition Direction
   useEffect(() => {
-    const currentIndex = navOrder.indexOf(location.pathname);
-    if (currentIndex > -1 && prevIndex.current > -1) {
-      setAnimClass(currentIndex > prevIndex.current ? 'slide-in-right' : 'slide-in-left');
+    const prevPath = prevPathRef.current;
+    const prevIdx = navOrder.indexOf(prevPath);
+    const currIdx = navOrder.indexOf(location.pathname);
+
+    if (prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx) {
+      setAnimClass(currIdx > prevIdx ? 'slide-in-right' : 'slide-in-left');
     } else {
       setAnimClass('animate-fade-in');
     }
-    prevIndex.current = currentIndex;
+
+    // ✅ FIX: pathname update হওয়ার পরেই prevPath update করছি
+    prevPathRef.current = location.pathname;
   }, [location.pathname]);
 
-  // 🔴 REDESIGNED SWIPE LOGIC (Sensitivity Fix)
-  const minSwipeDistance = 150; // threshold barano holo
+  const minSwipeDistance = 150;
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndPos.current = null;
     touchStartPos.current = {
       x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
+      y: e.targetTouches[0].clientY,
     };
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     touchEndPos.current = {
       x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
+      y: e.targetTouches[0].clientY,
     };
   };
 
   const onTouchEnd = () => {
     if (!touchStartPos.current || !touchEndPos.current) return;
+    const xDist = touchStartPos.current.x - touchEndPos.current.x;
+    const yDist = touchStartPos.current.y - touchEndPos.current.y;
+    const isHorizontal = Math.abs(xDist) > Math.abs(yDist);
 
-    const xDistance = touchStartPos.current.x - touchEndPos.current.x;
-    const yDistance = touchStartPos.current.y - touchEndPos.current.y;
-
-    // 🔴 Vertical swipe check: Jodi manush upore niche scroll kore, tobe page switch hobe na
-    const isHorizontalSwipe = Math.abs(xDistance) > Math.abs(yDistance);
-
-    if (isHorizontalSwipe && Math.abs(xDistance) > minSwipeDistance) {
+    if (isHorizontal && Math.abs(xDist) > minSwipeDistance) {
+      // ✅ FIX: location.pathname থেকে সরাসরি current index নাও — ref নয়
       const currentIndex = navOrder.indexOf(location.pathname);
       if (currentIndex === -1) return;
-
-      if (xDistance > 0 && currentIndex < navOrder.length - 1) {
-        navigate(navOrder[currentIndex + 1]); // Swipe Left -> Next
-      } else if (xDistance < 0 && currentIndex > 0) {
-        navigate(navOrder[currentIndex - 1]); // Swipe Right -> Prev
-      }
+      if (xDist > 0 && currentIndex < navOrder.length - 1) navigate(navOrder[currentIndex + 1]);
+      else if (xDist < 0 && currentIndex > 0) navigate(navOrder[currentIndex - 1]);
     }
+
+    touchStartPos.current = null;
+    touchEndPos.current = null;
   };
 
   useEffect(() => {
@@ -115,67 +115,96 @@ const Layout: React.FC = () => {
   const languages = [
     { code: 'bn', label: 'বাংলা (Bengali)' },
     { code: 'en', label: 'English' },
-    { code: 'ar', label: 'العربية (Arabic)' }
+    { code: 'ar', label: 'العربية (Arabic)' },
   ];
 
   return (
-    <div 
+    <div
       className="flex flex-col min-h-[100dvh] relative w-full max-w-[100vw] overflow-x-hidden text-sm md:text-base transition-colors duration-500"
-      onTouchStart={onTouchStart} 
-      onTouchMove={onTouchMove} 
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Navigation */}
-      <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm sm:max-w-md">
-        <nav className={`px-8 py-4 flex justify-between items-center transition-all duration-500 ${themeConfig.styles.navBg} ${themeConfig.styles.radius} ${themeConfig.styles.shadow}`}>
-          {navItems.map((item) => {
-            // 🔴 STRICT ACTIVE CHECK: location.pathname exactly match korle-i active hobe
+      {/* ── Navigation ── */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs sm:max-w-sm px-2">
+        <nav
+          className={`
+            px-6 py-3 flex justify-between items-center
+            transition-all duration-500
+            ${themeConfig.styles.navBg} ${themeConfig.styles.radius} ${themeConfig.styles.shadow}
+            ring-1 ring-white/10
+          `}
+        >
+          {navItems.map(item => {
+            // ✅ FIX: শুধুমাত্র location.pathname দিয়ে strict match — কোনো state বা ref নয়
             const isActive = location.pathname === item.path;
             return (
-              <Link 
-                key={item.path} to={item.path}
-                className={`text-xl transition-all duration-300 transform hover:scale-125 ${themeConfig.styles.navIconHover} ${
-                  isActive ? `${themeConfig.styles.accentText} scale-110` : `${themeConfig.styles.textMain} opacity-40 hover:opacity-100`
-                }`}
+              <Link
+                key={item.path}
+                to={item.path}
                 title={item.label}
+                className={`
+                  relative flex items-center justify-center w-10 h-10
+                  rounded-full text-base transition-all duration-300
+                  ${isActive
+                    ? `${themeConfig.styles.accentText} scale-110`
+                    : `${themeConfig.styles.textMain} opacity-40 hover:opacity-80 hover:scale-110`
+                  }
+                `}
               >
                 <i className={`fa-solid ${item.iconClass}`}></i>
+                {/* Active dot indicator */}
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-500" />
+                )}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <main className="flex-grow pt-32 pb-12 px-4 max-w-5xl mx-auto w-full overflow-x-hidden">
+      {/* ── Main Content ── */}
+      <main className="flex-grow pt-28 pb-12 px-4 max-w-5xl mx-auto w-full overflow-x-hidden">
         <div key={location.pathname} className={`page-transition-wrapper ${animClass} w-full`}>
           <Outlet />
         </div>
       </main>
 
-      {/* Footer (Unchanged) */}
+      {/* ── Footer ── */}
       <footer className={`mt-auto py-8 ${themeConfig.styles.cardBg} border-t ${themeConfig.styles.border} relative z-20 w-full`}>
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className={`text-xl font-bold tracking-widest uppercase mb-3 ${themeConfig.styles.textMain}`}>
+          <h2 className={`text-xl font-bold tracking-widest uppercase mb-2 ${themeConfig.styles.textMain}`}>
             RGSI | S-71 STUDIO
           </h2>
-          <p className={`text-xs md:text-sm mb-6 max-w-xl mx-auto opacity-70 ${themeConfig.styles.textMain}`}>
+          <p className={`text-xs md:text-sm mb-6 max-w-xl mx-auto opacity-60 ${themeConfig.styles.textMain}`}>
             {t.footer.desc}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="flex flex-col items-center">
-              <h3 className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${themeConfig.styles.accentText}`}>{t.footer.connect}</h3>
+              <h3 className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${themeConfig.styles.accentText}`}>
+                {t.footer.connect}
+              </h3>
               <div className="flex flex-col gap-2 text-sm">
                 {socialLinks.map((link, idx) => (
-                  <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 hover:text-green-500 transition-colors ${themeConfig.styles.textMain}`}>
-                    <i className={link.iconClass}></i> <span>{link.platform}</span>
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 hover:text-green-500 transition-colors ${themeConfig.styles.textMain}`}
+                  >
+                    <i className={link.iconClass}></i>
+                    <span>{link.platform}</span>
                   </a>
                 ))}
               </div>
             </div>
 
             <div className="flex flex-col items-center">
-              <h3 className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${themeConfig.styles.accentText}`}>{t.footer.contact}</h3>
+              <h3 className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${themeConfig.styles.accentText}`}>
+                {t.footer.contact}
+              </h3>
               <div className="flex flex-col gap-2 text-sm">
                 <div className={`flex items-center gap-2 ${themeConfig.styles.textMain}`}>
                   <i className="fa-solid fa-location-dot text-green-500"></i>
@@ -189,17 +218,28 @@ const Layout: React.FC = () => {
             </div>
           </div>
 
-          <div className={`pt-4 border-t ${themeConfig.styles.border} flex flex-col md:flex-row justify-center items-center gap-4 opacity-60 text-[10px] ${themeConfig.styles.textMain}`}>
+          <div
+            className={`pt-4 border-t ${themeConfig.styles.border} flex flex-col md:flex-row justify-center items-center gap-4 opacity-60 text-[10px] ${themeConfig.styles.textMain}`}
+          >
             <div className="relative">
-              <button onClick={() => setShowLangMenu(!showLangMenu)} className={`flex items-center gap-2 px-3 py-1.5 ${themeConfig.styles.radius} border ${themeConfig.styles.border} hover:bg-black/5 dark:hover:bg-white/10 transition-colors`}>
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className={`flex items-center gap-2 px-3 py-1.5 ${themeConfig.styles.radius} border ${themeConfig.styles.border} hover:bg-black/5 dark:hover:bg-white/10 transition-colors`}
+              >
                 <Globe size={14} />
                 <span>{languages.find(l => l.code === currentLang)?.label || 'Language'}</span>
-                <ChevronUp size={12} className={`transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+                <ChevronUp size={12} className={`transition-transform ${showLangMenu ? '' : 'rotate-180'}`} />
               </button>
               {showLangMenu && (
-                <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-40 ${themeConfig.styles.cardBg} border ${themeConfig.styles.border} ${themeConfig.styles.radius} shadow-xl overflow-hidden animate-fade-in`}>
+                <div
+                  className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 ${themeConfig.styles.cardBg} border ${themeConfig.styles.border} ${themeConfig.styles.radius} shadow-xl overflow-hidden animate-fade-in`}
+                >
                   {languages.map(lang => (
-                    <button key={lang.code} onClick={() => { changeLanguage(lang.code); setShowLangMenu(false); }} className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/10 ${themeConfig.styles.textMain}`}>
+                    <button
+                      key={lang.code}
+                      onClick={() => { changeLanguage(lang.code); setShowLangMenu(false); }}
+                      className={`w-full text-left px-4 py-2.5 text-xs flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${themeConfig.styles.textMain}`}
+                    >
                       <span>{lang.label}</span>
                       {currentLang === lang.code && <Check size={12} className={themeConfig.styles.accentText} />}
                     </button>
@@ -207,6 +247,7 @@ const Layout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="flex items-center gap-2">
               <span>&copy; 2026 {t.footer.rights}</span>
               <Link to="/admin" className="hover:text-green-500 transition-colors">
@@ -215,8 +256,18 @@ const Layout: React.FC = () => {
             </div>
           </div>
 
-          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={`absolute bottom-6 right-6 w-10 h-10 flex items-center justify-center transition-all duration-300 transform hover:scale-110 z-40 ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'} ${themeConfig.styles.cardBg} border ${themeConfig.styles.border} ${themeConfig.styles.textMain} ${themeConfig.styles.radius} ${themeConfig.styles.shadow}`}>
-            <ChevronUp size={20} />
+          {/* Scroll To Top */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className={`
+              absolute bottom-6 right-6 w-9 h-9 flex items-center justify-center
+              transition-all duration-300 transform hover:scale-110 z-40
+              ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}
+              ${themeConfig.styles.cardBg} border ${themeConfig.styles.border}
+              ${themeConfig.styles.textMain} ${themeConfig.styles.radius} ${themeConfig.styles.shadow}
+            `}
+          >
+            <ChevronUp size={18} />
           </button>
         </div>
       </footer>
