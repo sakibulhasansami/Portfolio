@@ -101,9 +101,9 @@ const Home: React.FC = () => {
             className={`relative z-10 w-full h-full border-4 p-1 rounded-full ${heroAnim} ${themeConfig.styles.cardBg} ${themeConfig.styles.shadow}`}
             style={{ borderColor: heroBorderColor || undefined }}
           >
-            {/* ✅ Fallback: pages/Sami.png (local file from repo) */}
+            {/* ✅ Fallback: Sami.png (local file from repo) */}
             <img
-              src={heroImage || "/pages/Sami.png"}
+              src={heroImage || "/Sami.png"}
               alt="Profile"
               className="w-full h-full object-cover rounded-full"
             />
