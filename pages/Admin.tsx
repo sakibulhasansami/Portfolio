@@ -11,6 +11,7 @@ const Admin: React.FC = () => {
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [isSaving, setIsSaving] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'general' | 'comments' | 'gallery' | 'library' | 'projects'>('general');
@@ -46,6 +47,13 @@ const Admin: React.FC = () => {
     'Cotton Candy OS', 'Matcha OS' 
   ];
 
+  // Helper to show timed messages
+  const showMessage = (msg: string, type: 'success' | 'error' = 'success', duration = 4000) => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), duration);
+  };
+
   useEffect(() => {
     const adminAuth = sessionStorage.getItem('admin_auth');
     if (adminAuth === 'true') setIsAuthenticated(true);
@@ -74,6 +82,7 @@ const Admin: React.FC = () => {
     e.preventDefault();
     try {
       setMessage('Verifying...');
+      setMessageType('success');
       await signInWithEmailAndPassword(auth, email, password);
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_auth', 'true');
@@ -81,6 +90,7 @@ const Admin: React.FC = () => {
     } catch (error: any) {
       console.error(error);
       setMessage('Incorrect email or password.');
+      setMessageType('error');
     }
   };
 
@@ -93,37 +103,73 @@ const Admin: React.FC = () => {
 
   const handlePhotoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try { await addPhoto(photoForm); setMessage('Photo added successfully!'); setPhotoForm({ title: '', category: '', imageUrl: '', tag: '' }); setTimeout(() => setMessage(''), 3000); } catch (error) { setMessage('Error adding photo'); }
+    setIsSaving(true);
+    try {
+      await addPhoto(photoForm);
+      setPhotoForm({ title: '', category: '', imageUrl: '', tag: '' });
+      showMessage('✅ Photo added successfully!', 'success');
+    } catch (error: any) {
+      console.error(error);
+      showMessage('❌ Error adding photo: ' + (error?.message || 'Unknown error'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleWritingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try { await addWriting(writingForm); setMessage('Writing added successfully!'); setWritingForm({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' }); setTimeout(() => setMessage(''), 3000); } catch (error) { setMessage('Error adding writing'); }
+    setIsSaving(true);
+    try {
+      await addWriting(writingForm);
+      setWritingForm({ title: '', category: '', cover_url: '', pdfUrl: '', summary: '' });
+      showMessage('✅ Writing added successfully!', 'success');
+    } catch (error: any) {
+      console.error(error);
+      showMessage('❌ Error adding writing: ' + (error?.message || 'Unknown error'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const images = [projectForm.img1, projectForm.img2, projectForm.img3].filter(url => url.length > 0);
       const tagsArray = projectForm.tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
-      await addProject({ title: projectForm.title, category: projectForm.category, tags: tagsArray, imageUrls: images, link: projectForm.link, description: projectForm.description });
-      setMessage('Project added successfully!');
+      await addProject({
+        title: projectForm.title,
+        category: projectForm.category,
+        tags: tagsArray,
+        imageUrls: images,
+        link: projectForm.link,
+        description: projectForm.description
+      });
       setProjectForm({ title: '', category: '', tags: '', img1: '', img2: '', img3: '', link: '', description: '' });
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) { setMessage('Error adding project'); }
+      showMessage('✅ Project added successfully!', 'success');
+    } catch (error: any) {
+      console.error(error);
+      showMessage('❌ Error adding project: ' + (error?.message || 'Unknown error'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSettingsSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
+    setMessage('');
     try {
       const finalSettings = { ...settings, theme: theme };
       await updateSettings(finalSettings);
-      setMessage('All Settings, Theme & Social Links updated!');
-      const newSettings = await fetchSettings();
-      if (newSettings) setSettings(newSettings);
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) { setMessage('Error updating settings'); console.error(error); } finally { setIsSaving(false); }
+      // Do NOT re-fetch after save — it would overwrite the current state with stale data
+      showMessage('✅ Settings saved successfully!', 'success');
+    } catch (error: any) {
+      console.error(error);
+      showMessage('❌ Error saving settings: ' + (error?.message || 'Unknown error'), 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleCommentApproval = async (id: string, currentStatus: boolean) => {
@@ -155,11 +201,11 @@ const Admin: React.FC = () => {
   };
   const addSocialLink = () => {
     if (newSocial.platform && newSocial.url) {
-      setSettings(prev => ({ ...prev, socialLinks: [...(settings.socialLinks || []), newSocial] }));
+      setSettings(prev => ({ ...prev, socialLinks: [...(prev.socialLinks || []), newSocial] }));
       setNewSocial({ platform: '', url: '', iconClass: '' });
     }
   };
-  const removeSocialLink = (index: number) => setSettings(prev => ({ ...prev, socialLinks: settings.socialLinks.filter((_, i) => i !== index) }));
+  const removeSocialLink = (index: number) => setSettings(prev => ({ ...prev, socialLinks: prev.socialLinks.filter((_, i) => i !== index) }));
 
   const InputClass = `w-full p-2 ${themeConfig.styles.radius} mb-4 bg-transparent border ${themeConfig.styles.border} ${themeConfig.styles.textMain} focus:outline-none focus:border-opacity-100 placeholder-opacity-50`;
   const LabelClass = `block mb-1 text-sm font-bold ${themeConfig.styles.accentText}`;
@@ -197,7 +243,16 @@ const Admin: React.FC = () => {
         </button>
       </div>
 
-      {message && <div className={`p-4 mb-6 ${themeConfig.styles.radius} ${themeConfig.styles.accentBg} text-white animate-fade-in`}>{message}</div>}
+      {/* Fixed: message now shows success (accent) or error (red) with proper styling */}
+      {message && (
+        <div className={`p-4 mb-6 ${themeConfig.styles.radius} font-medium animate-fade-in ${
+          messageType === 'error'
+            ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+            : `${themeConfig.styles.accentBg} text-white`
+        }`}>
+          {message}
+        </div>
+      )}
 
       {/* TABS */}
       <div className="flex overflow-x-auto gap-2 border-b border-gray-500/30 mb-6 custom-scrollbar">
@@ -358,7 +413,9 @@ const Admin: React.FC = () => {
             <input type="text" placeholder="Category" required className={InputClass} value={photoForm.category} onChange={e => setPhotoForm({...photoForm, category: e.target.value})} />
             <input type="text" placeholder="Tag" required className={InputClass} value={photoForm.tag} onChange={e => setPhotoForm({...photoForm, tag: e.target.value})} />
             <input type="text" placeholder="Image URL" required className={InputClass} value={photoForm.imageUrl} onChange={e => setPhotoForm({...photoForm, imageUrl: e.target.value})} />
-            <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Photo</button>
+            <button type="submit" disabled={isSaving} className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button} flex justify-center items-center gap-2`}>
+              {isSaving ? <Loader2 className="animate-spin" size={18} /> : null} Add Photo
+            </button>
           </form>
         </section>
       )}
@@ -373,7 +430,9 @@ const Admin: React.FC = () => {
             <input type="text" placeholder="Cover Image URL" required className={InputClass} value={writingForm.cover_url} onChange={e => setWritingForm({...writingForm, cover_url: e.target.value})} />
             <input type="text" placeholder="PDF/Read URL" required className={InputClass} value={writingForm.pdfUrl} onChange={e => setWritingForm({...writingForm, pdfUrl: e.target.value})} />
             <textarea placeholder="Summary" required className={InputClass + " h-24"} value={writingForm.summary} onChange={e => setWritingForm({...writingForm, summary: e.target.value})} />
-            <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Writing</button>
+            <button type="submit" disabled={isSaving} className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button} flex justify-center items-center gap-2`}>
+              {isSaving ? <Loader2 className="animate-spin" size={18} /> : null} Add Writing
+            </button>
           </form>
         </section>
       )}
@@ -385,7 +444,7 @@ const Admin: React.FC = () => {
           <form onSubmit={handleProjectSubmit}>
             <input type="text" placeholder="Project Title" required className={InputClass} value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} />
             <input type="text" placeholder="Category" required className={InputClass} value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} />
-            <input type="text" placeholder="Tags" required className={InputClass} value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} />
+            <input type="text" placeholder="Tags (comma separated)" required className={InputClass} value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                <input type="text" placeholder="Image 1 (Cover)" required className={InputClass} value={projectForm.img1} onChange={e => setProjectForm({...projectForm, img1: e.target.value})} />
                <input type="text" placeholder="Image 2 (Detail)" className={InputClass} value={projectForm.img2} onChange={e => setProjectForm({...projectForm, img2: e.target.value})} />
@@ -393,7 +452,9 @@ const Admin: React.FC = () => {
             </div>
             <input type="text" placeholder="Project Link" required className={InputClass} value={projectForm.link} onChange={e => setProjectForm({...projectForm, link: e.target.value})} />
             <textarea placeholder="Description" required className={InputClass + " h-24"} value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} />
-            <button type="submit" className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button}`}>Add Project</button>
+            <button type="submit" disabled={isSaving} className={`px-4 py-2 ${themeConfig.styles.radius} w-full ${themeConfig.styles.button} flex justify-center items-center gap-2`}>
+              {isSaving ? <Loader2 className="animate-spin" size={18} /> : null} Add Project
+            </button>
           </form>
         </section>
       )}
